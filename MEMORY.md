@@ -44,6 +44,13 @@ The original scripts remain available alongside the workspace server:
 - Authorization request failures render on the Photos page. Helper startup failures and timeouts become `PhotosUnavailable` errors. Successful request redirects preserve the target receipt.
 - Access must still be enabled in macOS settings by the user. Authorized library browsing and imports were not verified during this fix.
 
+## Receipty agent skill
+
+- `skills/receipty/SKILL.md` is the repo-maintained skill for searching, importing, organizing, and correcting receipts through Receipty MCP tools or the REST API. `skills/receipty/references/api.md` documents REST endpoints and request shapes.
+- The skill covers workspace verification, full-replacement field updates, watcher-created drafts, merge behavior, background extraction, and Apple Photos authorization and attachment modes.
+- On 2026-11-19, the skill was copied to this machine's `~/.hermes/skills/productivity/receipty/`. Installed files were byte-verified against the repo, and `hermes skills list --source local --enabled-only` listed `receipty` as enabled. This is a separate copy; future repo edits need to be copied to Hermes again.
+- Skill structure validation passed with the skill-creator `quick_validate.py` script. Discovery was verified; an end-to-end Hermes receipt workflow was not run.
+
 ## Verification
 
 - 2026-11-19: `/Users/phaze9/venv/bin/python -m pytest -q` passed all 10 tests. Coverage includes denied-access guidance, permission request error rendering, and receipt preservation, plus the existing receipt, workspace, and managed Photos import tests.
