@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Receipt · Receipty{% endblock %}
+{% block content %}
+<a href="/">← Inbox</a>
+<h1>{{ receipt.fields.get("title", "Receipt") }}</h1>
+<form method="post" class="editor">
+  <label>State
+    <select name="state">
+      {% for value in ["draft", "active", "archived"] %}
+      <option {% if receipt.state == value %}selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Fields (JSON object)
+    <textarea name="fields_json" rows="14">{{ fields_json }}</textarea>
+  </label>
+  <button>Save</button>
+</form>
+<h2>Attachments</h2>
+<p><a href="/photos?receipt_id={{ receipt.id }}">Attach from Apple Photos</a></p>
+{% for attachment in receipt.attachments %}
+<article class="attachment">
+  <strong>{{ attachment.name }}</strong><span>{{ attachment.status }}</span>
+  {% if attachment.provider_metadata.thumbnail %}<img class="thumbnail" src="/api/v1/attachments/{{ attachment.id }}/thumbnail" alt="">{% endif %}
+  {% if attachment.path %}<a href="/api/v1/attachments/{{ attachment.id }}/content">Open</a>{% endif %}
+  {% if attachment.error %}<p class="error">{{ attachment.error }}</p>{% endif %}
+  {% if attachment.extracted_text %}<details><summary>Extracted text</summary><pre>{{ attachment.extracted_text }}</pre></details>{% endif %}
+</article>
+{% else %}<p>No attachments.</p>{% endfor %}
+{% endblock %}
+

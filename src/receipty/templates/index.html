@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="toolbar">
+  <form method="get">
+    <input name="query" value="{{ query }}" placeholder="Search receipts and extracted text">
+    <select name="state">
+      {% for value in ["draft", "active", "archived", ""] %}
+      <option value="{{ value }}" {% if state == value %}selected{% endif %}>{{ value or "all" }}</option>
+      {% endfor %}
+    </select>
+    <button>Search</button>
+  </form>
+  <form method="post" action="/receipts">
+    <input name="title" placeholder="New receipt title">
+    <button>Create</button>
+  </form>
+</section>
+<section class="cards">
+  {% for receipt in receipts %}
+  <a class="card" href="/receipts/{{ receipt.id }}">
+    <strong>{{ receipt.fields.get("title", receipt.id) }}</strong>
+    <span>{{ receipt.state }} · {{ receipt.attachments|length }} attachment(s)</span>
+    {% for attachment in receipt.attachments[:2] %}<small>{{ attachment.name }} — {{ attachment.status }}</small>{% endfor %}
+  </a>
+  {% else %}<p>No receipts found.</p>{% endfor %}
+</section>
+{% endblock %}
+

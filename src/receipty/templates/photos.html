@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Apple Photos · Receipty{% endblock %}
+{% block content %}
+<h1>Apple Photos</h1>
+{% if error %}<p class="notice">{{ error }}</p>{% endif %}
+{% if authorization %}<p>Authorization: <strong>{{ authorization.status }}</strong></p>{% endif %}
+{% if authorization and authorization.status == "denied" %}
+<p class="notice">Photos access was denied. macOS will not show the permission prompt again.
+Open System Settings → Privacy &amp; Security → Photos and enable access for Receipty Photos Helper
+(or the app used to launch Receipty), then refresh this page.</p>
+<p><a href="x-apple.systempreferences:com.apple.preference.security?Privacy_Photos">Open Photos privacy settings</a> · <a href="{{ request.url }}">Refresh access status</a></p>
+{% elif authorization and authorization.status == "restricted" %}
+<p class="notice">Photos access is restricted by macOS. Check Screen Time or device management restrictions, then refresh this page.</p>
+{% elif authorization and authorization.status not in ["authorized", "limited"] %}
+<form method="post" action="/photos/authorize">
+  <input type="hidden" name="receipt_id" value="{{ receipt_id or '' }}">
+  <button onclick="this.textContent='Waiting for macOS permission…'">Request Photos access</button>
+</form>
+{% endif %}
+{% if receipt_id %}<p>Attaching to receipt <a href="/receipts/{{ receipt_id }}">{{ receipt_id }}</a>.</p>{% endif %}
+{% if albums %}
+<h2>Albums</h2>
+<ul>
+{% for album in albums %}
+  <li><a href="/photos?receipt_id={{ receipt_id or '' }}&album_id={{ album.id }}">{{ album.title }}</a> ({{ album.count }})
+  {% if receipt_id %}
+    <form class="inline" method="post" action="/receipts/{{ receipt_id }}/photos/albums">
+      <input type="hidden" name="album_id" value="{{ album.id }}">
+      <select name="mode"><option>dynamic</option><option>snapshot</option></select><button>Attach album</button>
+    </form>
+  {% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if assets %}
+<h2>Assets</h2>
+{% for asset in assets %}
+<article class="attachment"><strong>{{ asset.filename }}</strong><span>{{ asset.creationDate or '' }}</span>
+{% if receipt_id %}<form method="post" action="/receipts/{{ receipt_id }}/photos/assets">
+  <input type="hidden" name="asset_id" value="{{ asset.id }}">
+  <select name="mode"><option value="managed_copy">managed copy</option><option value="reference">reference</option></select>
+  <button>Attach asset</button>
+</form>{% endif %}</article>
+{% endfor %}
+{% endif %}
+{% endblock %}

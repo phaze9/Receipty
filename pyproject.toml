@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=79"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "receipty"
+version = "0.1.0"
+description = "Local-first receipt workspace, web API, and MCP server"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.17,<2",
+  "fastapi>=0.128,<1",
+  "jinja2>=3.1,<4",
+  "python-multipart>=0.0.20,<1",
+  "mcp>=1.12,<2",
+  "pillow>=12,<13",
+  "pytesseract>=0.3,<1",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn>=0.40,<1",
+  "watchfiles>=1,<2",
+]
+
+[project.optional-dependencies]
+documents = ["pymupdf>=1.26,<2", "python-docx>=1.2,<2"]
+dev = ["httpx>=0.28,<1", "pytest>=8.3,<9"]
+
+[project.scripts]
+receipty = "receipty.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+receipty = ["templates/*.html", "static/*.css"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

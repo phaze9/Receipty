@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Receipty{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header><a href="/">Receipty</a><span>Local receipt workspace</span><a class="nav" href="/photos">Photos</a></header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>
+
