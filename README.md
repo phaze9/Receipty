@@ -15,8 +15,8 @@ python3 -m venv .venv
 .venv/bin/receipty serve /path/to/workspace
 ```
 
-Open <http://127.0.0.1:8000/> for the UI, `/docs` for the REST API, or connect
-an MCP client to `http://127.0.0.1:8000/mcp/` using Streamable HTTP.
+Open <http://127.0.0.1:9000/> for the UI, `/docs` for the REST API, or connect
+an MCP client to `http://127.0.0.1:9000/mcp/` using Streamable HTTP.
 
 The server creates only these reserved paths in a workspace:
 

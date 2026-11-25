@@ -11,7 +11,7 @@ def parser() -> argparse.ArgumentParser:
     serve = subcommands.add_parser("serve", help="Open one workspace and run Receipty")
     serve.add_argument("workspace")
     serve.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "localhost"])
-    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--port", type=int, default=9000)
     return result
 
 

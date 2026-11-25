@@ -33,11 +33,11 @@ is not an exclusion mechanism.
 Read-only examples (replace the base URL when using another port):
 
 ```sh
-curl --fail-with-body --silent --show-error http://127.0.0.1:8000/api/v1/workspace
+curl --fail-with-body --silent --show-error http://127.0.0.1:9000/api/v1/workspace
 curl --fail-with-body --silent --show-error --get \
   --data-urlencode 'query=coffee' --data-urlencode 'state=active' \
   --data-urlencode 'limit=50' --data-urlencode 'offset=0' \
-  http://127.0.0.1:8000/api/v1/receipts
+  http://127.0.0.1:9000/api/v1/receipts
 ```
 
 For writes, serialize the JSON with a JSON library into a temporary file and

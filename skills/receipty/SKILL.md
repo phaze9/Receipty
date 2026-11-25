@@ -11,15 +11,15 @@ Receipty MCP tools; otherwise use the REST API described in
 
 ## Connect to the right workspace
 
-The default server is `http://127.0.0.1:8000`, with UI `/`, REST documentation
+The default server is `http://127.0.0.1:9000`, with UI `/`, REST documentation
 `/docs`, and Streamable HTTP MCP `/mcp/`. These are defaults, not proof of a running
 server. Call `workspace_info` or `GET /api/v1/workspace` and check the returned root
 against the user's intended workspace before changing data. A workspace is the
 receipt collection, not necessarily the Receipty source checkout.
 
 If no service is running and the intended workspace is known, start
-`receipty serve /path/to/workspace --port 8000` using the installed environment.
-From a checkout, `./receipty.sh /path/to/workspace --port 8000` is also available;
+`receipty serve /path/to/workspace --port 9000` using the installed environment.
+From a checkout, `./receipty.sh /path/to/workspace --port 9000` is also available;
 that launcher currently expects the checkout at `$HOME/Projects/Receipty`.
 Do not start a second process for an already open workspace. Ask for the workspace
 only when it cannot be determined from the request or existing connection.
