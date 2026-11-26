@@ -9,7 +9,7 @@ def test_rest_crud_attach_extract_search_and_archive(tmp_path: Path):
     workspace = tmp_path / "workspace"
     app = create_app(workspace, start_background=False)
     with TestClient(app) as client:
-        created = client.post("/api/v1/receipts", json={"fields": {"title": "Lotus receipt", "vendor": "Lotus"}})
+        created = client.post("/api/v1/receipts", json={"fields": {"title": "Lotus receipt", "date": "2026-11-27", "vendor": "Lotus"}})
         assert created.status_code == 201
         receipt_id = created.json()["id"]
 
@@ -86,19 +86,19 @@ def test_mcp_streamable_http_initializes(tmp_path: Path):
 def test_merge_moves_attachments_and_archives_sources(tmp_path: Path):
     app = create_app(tmp_path / "workspace", start_background=False)
     with TestClient(app) as client:
-        first = client.post("/api/v1/receipts", json={"fields": {"title": "A", "vendor": "A"}}).json()
-        second = client.post("/api/v1/receipts", json={"fields": {"title": "B", "total": 10}}).json()
+        first = client.post("/api/v1/receipts", json={"fields": {"title": "A", "date": "2026-11-01", "vendor": "A"}}).json()
+        second = client.post("/api/v1/receipts", json={"fields": {"title": "B", "date": "2026-11-02", "total": 10}}).json()
         merged = client.post(
             "/api/v1/receipts/merge",
             json={"source_ids": [first["id"], second["id"]], "target_id": first["id"]},
         )
         assert merged.status_code == 200
-        assert merged.json()["fields"] == {"title": "A", "total": 10, "vendor": "A"}
+        assert merged.json()["fields"] == {"title": "A", "total": 10, "vendor": "A", "date": "2026-11-01"}
         assert client.get(f"/api/v1/receipts/{second['id']}").json()["state"] == "archived"
 
 
 
-def test_title_is_mandatory_and_backfills_legacy_receipts(tmp_path: Path):
+def test_title_and_date_are_mandatory_and_backfill_legacy_receipts(tmp_path: Path):
     from sqlalchemy import select
 
     from receipty.database import session_scope
@@ -109,15 +109,19 @@ def test_title_is_mandatory_and_backfills_legacy_receipts(tmp_path: Path):
     with TestClient(app) as client:
         missing = client.post("/api/v1/receipts", json={"fields": {"vendor": "Lotus"}})
         assert missing.status_code == 400
-        blank = client.post("/api/v1/receipts", json={"fields": {"title": "  "}})
-        assert blank.status_code == 400
+        blank_title = client.post("/api/v1/receipts", json={"fields": {"title": "  ", "date": "todo"}})
+        assert blank_title.status_code == 400
+        missing_date = client.post("/api/v1/receipts", json={"fields": {"title": "Lotus"}})
+        assert missing_date.status_code == 400
+        blank_date = client.post("/api/v1/receipts", json={"fields": {"title": "Lotus", "date": "  "}})
+        assert blank_date.status_code == 400
 
-        created = client.post("/api/v1/receipts", json={"fields": {"title": "Desk receipt"}})
+        created = client.post("/api/v1/receipts", json={"fields": {"title": "Desk receipt", "date": "todo"}})
         assert created.status_code == 201
         receipt_id = created.json()["id"]
 
         bad_patch = client.patch(
-            f"/api/v1/receipts/{receipt_id}", json={"fields": {"vendor": "No title"}}
+            f"/api/v1/receipts/{receipt_id}", json={"fields": {"title": "X", "vendor": "No date"}}
         )
         assert bad_patch.status_code == 400
 
@@ -126,9 +130,10 @@ def test_title_is_mandatory_and_backfills_legacy_receipts(tmp_path: Path):
             receipt.fields = {"description": "Legacy description"}
 
         with session_scope(app.state.context.sessions) as session:
-            assert app.state.context.service.backfill_titles(session) == 1
+            assert app.state.context.service.backfill_required_fields(session) == 1
             receipt = session.scalar(select(Receipt).where(Receipt.id == receipt_id))
             assert receipt.fields["title"] == "Legacy description"
+            assert receipt.fields["date"] == "todo"
             assert "description" not in receipt.fields
 
         with session_scope(app.state.context.sessions) as session:
@@ -136,6 +141,6 @@ def test_title_is_mandatory_and_backfills_legacy_receipts(tmp_path: Path):
             receipt.fields = {"title": "Cafe", "description": "Cafe"}
 
         with session_scope(app.state.context.sessions) as session:
-            assert app.state.context.service.backfill_titles(session) == 1
+            assert app.state.context.service.backfill_required_fields(session) == 1
             receipt = session.scalar(select(Receipt).where(Receipt.id == receipt_id))
-            assert receipt.fields == {"title": "Cafe"}
+            assert receipt.fields == {"title": "Cafe", "date": "todo"}

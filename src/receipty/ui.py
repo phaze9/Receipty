@@ -30,9 +30,13 @@ def router() -> APIRouter:
             )
 
     @ui.post("/receipts")
-    def create(request: Request, title: str = Form(""), description: str = Form("")):
+    def create(request: Request, title: str = Form(""), date: str = Form(""), description: str = Form("")):
         ctx = request.app.state.context
-        fields = {"title": title} if title else {}
+        fields = {}
+        if title:
+            fields["title"] = title
+        if date:
+            fields["date"] = date
         if description:
             fields["description"] = description
         try:
@@ -48,13 +52,14 @@ def router() -> APIRouter:
         ctx = request.app.state.context
         with session_scope(ctx.sessions) as session:
             receipt = ctx.service.get(session, receipt_id)
-            extras = {k: v for k, v in receipt.fields.items() if k not in ("title", "description")}
+            extras = {k: v for k, v in receipt.fields.items() if k not in ("title", "date", "description")}
             return templates.TemplateResponse(
                 request,
                 "detail.html",
                 {
                     "receipt": receipt,
                     "title": receipt.fields.get("title", ""),
+                    "date": receipt.fields.get("date", ""),
                     "description": receipt.fields.get("description", ""),
                     "fields_json": json.dumps(extras, indent=2),
                 },
@@ -65,6 +70,7 @@ def router() -> APIRouter:
         request: Request,
         receipt_id: str,
         title: str = Form(""),
+        date: str = Form(""),
         description: str = Form(""),
         fields_json: str = Form(...),
         state: str = Form(...),
@@ -76,8 +82,9 @@ def router() -> APIRouter:
         except (json.JSONDecodeError, ValueError) as exc:
             raise HTTPException(400, str(exc)) from exc
         extras.pop("title", None)
+        extras.pop("date", None)
         extras.pop("description", None)
-        fields = {**extras, "title": title}
+        fields = {**extras, "title": title, "date": date}
         if description:
             fields["description"] = description
         ctx = request.app.state.context

@@ -23,6 +23,12 @@ def require_title(fields: dict) -> None:
         raise ValueError("title is required and must be a non-empty string")
 
 
+def require_date(fields: dict) -> None:
+    date = fields.get("date") if isinstance(fields, dict) else None
+    if not isinstance(date, str) or not date.strip():
+        raise ValueError("date is required and must be a non-empty string (use \"todo\" if unknown)")
+
+
 class ReceiptService:
     def __init__(self, workspace: Workspace, sessions: sessionmaker[Session]):
         self.workspace = workspace
@@ -40,6 +46,7 @@ class ReceiptService:
 
     def create(self, session: Session, body: ReceiptCreate, *, origin: str = "manual") -> Receipt:
         require_title(body.fields)
+        require_date(body.fields)
         receipt = Receipt(state=body.state, origin=origin, fields=body.fields)
         session.add(receipt)
         session.flush()
@@ -49,6 +56,7 @@ class ReceiptService:
         receipt = self.get(session, receipt_id)
         if body.fields is not None:
             require_title(body.fields)
+            require_date(body.fields)
             receipt.fields = body.fields
         if body.state is not None:
             receipt.state = body.state
@@ -120,7 +128,9 @@ class ReceiptService:
             session.add(Job(attachment_id=missing.id))
             return self.get(session, missing.receipt_id)
         receipt = self.create(
-            session, ReceiptCreate(fields={"title": path.stem}, state="draft"), origin="watcher"
+            session,
+            ReceiptCreate(fields={"title": path.stem, "date": "todo"}, state="draft"),
+            origin="watcher",
         )
         self.attach_file(session, receipt.id, path)
         return receipt
@@ -143,6 +153,7 @@ class ReceiptService:
             target.fields = merged
             source.state = "archived"
         require_title(target.fields)
+        require_date(target.fields)
         session.flush()
         return self.get(session, target.id)
 
@@ -155,7 +166,7 @@ class ReceiptService:
                 attachment.status = "missing"
                 attachment.error = "File is missing"
 
-    def backfill_titles(self, session: Session) -> int:
+    def backfill_required_fields(self, session: Session) -> int:
         changed = 0
         for receipt in session.scalars(self._receipt_query()):
             fields = dict(receipt.fields or {})
@@ -174,6 +185,10 @@ class ReceiptService:
                 and description.strip().lower() == title.strip().lower()
             ):
                 del fields["description"]
+                was_changed = True
+            date = fields.get("date")
+            if not (isinstance(date, str) and date.strip()):
+                fields["date"] = "todo"
                 was_changed = True
             if was_changed:
                 receipt.fields = fields

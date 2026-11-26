@@ -56,7 +56,7 @@ def create_app(workspace_path: str | Path, *, start_background: bool = True) -> 
         try:
             async with mcp.session_manager.run():
                 with session_scope(sessions) as session:
-                    service.backfill_titles(session)
+                    service.backfill_required_fields(session)
                 if start_background:
                     tasks = [
                         asyncio.create_task(watcher.run()),

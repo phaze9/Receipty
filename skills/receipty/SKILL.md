@@ -34,10 +34,11 @@ only when it cannot be determined from the request or existing connection.
 - Create with `create_receipt(fields, state="draft")`. Fields are arbitrary JSON;
   follow existing field names and value types in the collection. Creation accepts
   `draft` or `active`; updates additionally accept `archived`.
-- Every receipt requires a non-empty string `title`; requests without one fail
-  with a validation error. `description` is optional and displayed separately
+- Every receipt requires a non-empty string `title` and a non-empty string
+  `date`; requests without one fail with a validation error. Use `"todo"` as the
+  `date` when it is unknown. `description` is optional and displayed separately
   in the UI. A `description` identical to the `title` is removed rather than
-  stored twice. The list view shows `title`.
+  stored twice. The list view shows `title` and `date`.
 - Field conventions (user-corrected): receipts use a `tags` field (list of
   strings), not a `category` field. Tags are always lowercase English, e.g.
   `"tip"`, `"household"` — never `"Tipp"`/`"Haushalt"` or any other language.

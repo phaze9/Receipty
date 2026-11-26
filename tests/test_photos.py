@@ -28,7 +28,7 @@ def test_managed_photo_import_and_album_snapshot(tmp_path: Path):
     service = ReceiptService(workspace, sessions)
     photos = FakePhotos(workspace=workspace, service=service, sessions=sessions)
     with session_scope(sessions) as session:
-        receipt = service.create(session, ReceiptCreate(fields={"title": "Photo receipt"}))
+        receipt = service.create(session, ReceiptCreate(fields={"title": "Photo receipt", "date": "todo"}))
         receipt_id = receipt.id
 
     photo = photos.link_asset(receipt_id, "asset-1")

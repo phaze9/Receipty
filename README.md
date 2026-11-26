@@ -6,16 +6,19 @@ files remain ordinary files inside the workspace.
 
 ## Receipt fields
 
-Receipts have a required, non-empty `title` and an optional `description`; the
-list view shows `title`. If `description` is identical to `title`, it is
-removed. Organize receipts with `tags`, a list of lowercase English strings,
+Receipts have a required, non-empty `title` and `date` (use `"todo"` when the
+date is unknown), and an optional `description`; the
+list view shows `title` and `date`. If `description` is identical to `title`, it
+is removed. Legacy receipts missing a title or date are backfilled on startup
+(title from description or first attachment name, date to `"todo"`). Organize
+receipts with `tags`, a list of lowercase English strings,
 instead of a `category` field. A receipt can have multiple tags:
 
 ```json
-{"title": "Example receipt", "tags": ["food", "travel"]}
+{"title": "Example receipt", "date": "2026-11-27", "tags": ["food", "travel"]}
 ```
 
-The browser editor exposes title and description separately (description as a
+The browser editor exposes title, date and description separately (description as a
 multi-line field); enter tags in Additional fields as JSON. Receipt search
 matches tags along with other fields and extracted text. Through REST or MCP,
 submitting `fields` replaces the entire fields object, so fetch the receipt
