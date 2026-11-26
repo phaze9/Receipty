@@ -30,6 +30,13 @@ The original scripts remain available alongside the workspace server:
 - `receipty.sh` launches the server using an available virtual environment and forwards the workspace and CLI options. It currently assumes the project lives at `$HOME/Projects/Receipty`.
 - The launcher requires a workspace argument, accepts options such as `--port`, and selects Python from project `.venv`, project `venv`, `$HOME/venv`, then `python3`. It sets `PYTHONPATH` to the checkout's `src/` directory. Its shell syntax and CLI help were checked. Placement in `$HOME/Projects/Agent` was blocked by filesystem policy; the launcher is available at the repository root.
 
+## Receipt field conventions
+
+- Use `tags` (a JSON list of lowercase English strings) instead of `category`. A receipt can have multiple tags. This is a field convention within the existing arbitrary JSON model, not a dedicated database column or tag picker.
+- Receipts require a non-empty string `title`; `description` is optional. The browser editor exposes these separately and keeps tags in Additional fields (JSON). Receipt search matches tags as part of the JSON fields.
+- REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
+- Keep project documentation general: omit workspace-specific paths, receipt contents, identifiers, and inventories.
+
 ## Implementation limits
 
 - The initial implementation is partial relative to the original v1 plan. Search currently uses SQL `LIKE`, not FTS5. Database initialization uses SQLAlchemy `create_all`; Alembic is declared but no migrations are implemented. There is no `uv.lock`.

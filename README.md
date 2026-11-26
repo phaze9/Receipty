@@ -4,6 +4,21 @@ Receipty is a local-first receipt workspace with a browser UI, REST API, and
 Model Context Protocol server. Receipt fields are arbitrary JSON, while source
 files remain ordinary files inside the workspace.
 
+## Receipt fields
+
+Receipts have a required, non-empty `title` and an optional `description`.
+Organize receipts with `tags`, a list of lowercase English strings, instead of
+a `category` field. A receipt can have multiple tags:
+
+```json
+{"title": "Example receipt", "tags": ["food", "travel"]}
+```
+
+The browser editor exposes title and description separately; enter tags in
+Additional fields as JSON. Receipt search matches tags along with other fields
+and extracted text. Through REST or MCP, submitting `fields` replaces the entire
+fields object, so fetch the receipt first and preserve unrelated fields.
+
 ## Development
 
 Receipty requires Python 3.12 and Tesseract with the English and Thai language
