@@ -17,6 +17,12 @@ class NotFoundError(LookupError):
     pass
 
 
+def require_title(fields: dict) -> None:
+    title = fields.get("title") if isinstance(fields, dict) else None
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError("title is required and must be a non-empty string")
+
+
 class ReceiptService:
     def __init__(self, workspace: Workspace, sessions: sessionmaker[Session]):
         self.workspace = workspace
@@ -33,6 +39,7 @@ class ReceiptService:
         return receipt
 
     def create(self, session: Session, body: ReceiptCreate, *, origin: str = "manual") -> Receipt:
+        require_title(body.fields)
         receipt = Receipt(state=body.state, origin=origin, fields=body.fields)
         session.add(receipt)
         session.flush()
@@ -41,6 +48,7 @@ class ReceiptService:
     def patch(self, session: Session, receipt_id: str, body: ReceiptPatch) -> Receipt:
         receipt = self.get(session, receipt_id)
         if body.fields is not None:
+            require_title(body.fields)
             receipt.fields = body.fields
         if body.state is not None:
             receipt.state = body.state
@@ -134,6 +142,7 @@ class ReceiptService:
             merged.update(target.fields)
             target.fields = merged
             source.state = "archived"
+        require_title(target.fields)
         session.flush()
         return self.get(session, target.id)
 
@@ -145,6 +154,33 @@ class ReceiptService:
             if not path.is_file() and attachment.status != "missing":
                 attachment.status = "missing"
                 attachment.error = "File is missing"
+
+    def backfill_titles(self, session: Session) -> int:
+        changed = 0
+        for receipt in session.scalars(self._receipt_query()):
+            fields = dict(receipt.fields or {})
+            title = fields.get("title")
+            description = fields.get("description")
+            was_changed = False
+            if not (isinstance(title, str) and title.strip()):
+                fields["title"] = (
+                    description if isinstance(description, str) and description.strip() else None
+                ) or (receipt.attachments[0].name if receipt.attachments else None) or "Untitled receipt"
+                title = fields["title"]
+                was_changed = True
+            if (
+                isinstance(description, str)
+                and description.strip()
+                and description.strip().lower() == title.strip().lower()
+            ):
+                del fields["description"]
+                was_changed = True
+            if was_changed:
+                receipt.fields = fields
+                changed += 1
+        if changed:
+            session.flush()
+        return changed
 
     def workspace_info(self, session: Session) -> dict[str, Any]:
         return {

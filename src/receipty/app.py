@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from .api import router as api_router
-from .database import create_database
+from .database import create_database, session_scope
 from .jobs import JobWorker
 from .mcp_server import build_mcp
 from .photos import PhotosBridge
@@ -55,6 +55,8 @@ def create_app(workspace_path: str | Path, *, start_background: bool = True) -> 
         lock.acquire()
         try:
             async with mcp.session_manager.run():
+                with session_scope(sessions) as session:
+                    service.backfill_titles(session)
                 if start_background:
                     tasks = [
                         asyncio.create_task(watcher.run()),

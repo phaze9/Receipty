@@ -23,3 +23,5 @@ textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, monos
 pre { white-space: pre-wrap; max-height: 25rem; overflow: auto; }
 @media (prefers-color-scheme: dark) { body { background: #181a18; color: #eee; } .card, .attachment { background: #222622; border-color: #404840; } }
 
+form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: auto; font-family: inherit; }
+.editor textarea[name="description"] { font-family: inherit; }

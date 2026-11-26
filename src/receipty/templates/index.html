@@ -11,14 +11,15 @@
     <button>Search</button>
   </form>
   <form method="post" action="/receipts">
-    <input name="title" placeholder="New receipt title">
+    <input name="title" placeholder="New receipt title" required>
+    <textarea name="description" rows="2" placeholder="Description (optional)"></textarea>
     <button>Create</button>
   </form>
 </section>
 <section class="cards">
   {% for receipt in receipts %}
   <a class="card" href="/receipts/{{ receipt.id }}">
-    <strong>{{ receipt.fields.get("title", receipt.id) }}</strong>
+    <strong>{{ receipt.fields.get("title") or receipt.id }}</strong>
     <span>{{ receipt.state }} · {{ receipt.attachments|length }} attachment(s)</span>
     {% for attachment in receipt.attachments[:2] %}<small>{{ attachment.name }} — {{ attachment.status }}</small>{% endfor %}
   </a>

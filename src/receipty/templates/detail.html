@@ -2,8 +2,14 @@
 {% block title %}Receipt · Receipty{% endblock %}
 {% block content %}
 <a href="/">← Inbox</a>
-<h1>{{ receipt.fields.get("title", "Receipt") }}</h1>
+<h1>{{ title or "Receipt" }}</h1>
 <form method="post" class="editor">
+  <label>Title
+    <input name="title" value="{{ title }}" required>
+  </label>
+  <label>Description
+    <textarea name="description" rows="4">{{ description }}</textarea>
+  </label>
   <label>State
     <select name="state">
       {% for value in ["draft", "active", "archived"] %}
@@ -11,8 +17,8 @@
       {% endfor %}
     </select>
   </label>
-  <label>Fields (JSON object)
-    <textarea name="fields_json" rows="14">{{ fields_json }}</textarea>
+  <label>Additional fields (JSON object)
+    <textarea name="fields_json" rows="10">{{ fields_json }}</textarea>
   </label>
   <button>Save</button>
 </form>
@@ -28,4 +34,3 @@
 </article>
 {% else %}<p>No attachments.</p>{% endfor %}
 {% endblock %}
-

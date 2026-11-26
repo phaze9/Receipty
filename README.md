@@ -6,18 +6,20 @@ files remain ordinary files inside the workspace.
 
 ## Receipt fields
 
-Receipts have a required, non-empty `title` and an optional `description`.
-Organize receipts with `tags`, a list of lowercase English strings, instead of
-a `category` field. A receipt can have multiple tags:
+Receipts have a required, non-empty `title` and an optional `description`; the
+list view shows `title`. If `description` is identical to `title`, it is
+removed. Organize receipts with `tags`, a list of lowercase English strings,
+instead of a `category` field. A receipt can have multiple tags:
 
 ```json
 {"title": "Example receipt", "tags": ["food", "travel"]}
 ```
 
-The browser editor exposes title and description separately; enter tags in
-Additional fields as JSON. Receipt search matches tags along with other fields
-and extracted text. Through REST or MCP, submitting `fields` replaces the entire
-fields object, so fetch the receipt first and preserve unrelated fields.
+The browser editor exposes title and description separately (description as a
+multi-line field); enter tags in Additional fields as JSON. Receipt search
+matches tags along with other fields and extracted text. Through REST or MCP,
+submitting `fields` replaces the entire fields object, so fetch the receipt
+first and preserve unrelated fields.
 
 ## Development
 

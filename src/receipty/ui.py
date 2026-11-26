@@ -30,13 +30,17 @@ def router() -> APIRouter:
             )
 
     @ui.post("/receipts")
-    def create(request: Request, title: str = Form("")):
+    def create(request: Request, title: str = Form(""), description: str = Form("")):
         ctx = request.app.state.context
-        with session_scope(ctx.sessions) as session:
-            receipt = ctx.service.create(
-                session, ReceiptCreate(fields={"title": title} if title else {})
-            )
-            receipt_id = receipt.id
+        fields = {"title": title} if title else {}
+        if description:
+            fields["description"] = description
+        try:
+            with session_scope(ctx.sessions) as session:
+                receipt = ctx.service.create(session, ReceiptCreate(fields=fields))
+                receipt_id = receipt.id
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.get("/receipts/{receipt_id}", response_class=HTMLResponse)
@@ -44,23 +48,44 @@ def router() -> APIRouter:
         ctx = request.app.state.context
         with session_scope(ctx.sessions) as session:
             receipt = ctx.service.get(session, receipt_id)
+            extras = {k: v for k, v in receipt.fields.items() if k not in ("title", "description")}
             return templates.TemplateResponse(
                 request,
                 "detail.html",
-                {"receipt": receipt, "fields_json": json.dumps(receipt.fields, indent=2)},
+                {
+                    "receipt": receipt,
+                    "title": receipt.fields.get("title", ""),
+                    "description": receipt.fields.get("description", ""),
+                    "fields_json": json.dumps(extras, indent=2),
+                },
             )
 
     @ui.post("/receipts/{receipt_id}")
-    def update(request: Request, receipt_id: str, fields_json: str = Form(...), state: str = Form(...)):
+    def update(
+        request: Request,
+        receipt_id: str,
+        title: str = Form(""),
+        description: str = Form(""),
+        fields_json: str = Form(...),
+        state: str = Form(...),
+    ):
         try:
-            fields = json.loads(fields_json)
-            if not isinstance(fields, dict):
+            extras = json.loads(fields_json)
+            if not isinstance(extras, dict):
                 raise ValueError("Fields must be a JSON object")
         except (json.JSONDecodeError, ValueError) as exc:
             raise HTTPException(400, str(exc)) from exc
+        extras.pop("title", None)
+        extras.pop("description", None)
+        fields = {**extras, "title": title}
+        if description:
+            fields["description"] = description
         ctx = request.app.state.context
-        with session_scope(ctx.sessions) as session:
-            ctx.service.patch(session, receipt_id, ReceiptPatch(fields=fields, state=state))
+        try:
+            with session_scope(ctx.sessions) as session:
+                ctx.service.patch(session, receipt_id, ReceiptPatch(fields=fields, state=state))
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.get("/photos", response_class=HTMLResponse)

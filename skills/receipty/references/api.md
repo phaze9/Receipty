@@ -30,6 +30,10 @@ Query results are ordered by most recently updated receipt. Detaching a file in
 the watched tree can allow a later scan to register it as a new draft; detachment
 is not an exclusion mechanism.
 
+`title` is required on create and on field updates (requests without one return
+400). `description` is optional; a description identical to the title is removed
+rather than stored twice.
+
 Read-only examples (replace the base URL when using another port):
 
 ```sh

@@ -55,10 +55,13 @@ def router() -> APIRouter:
     @api.post("/receipts", response_model=ReceiptOut, status_code=201)
     def create_receipt(request: Request, body: ReceiptCreate):
         ctx = context(request)
-        with session_scope(ctx.sessions) as session:
-            receipt = ctx.service.create(session, body)
-            session.flush()
-            return ctx.service.get(session, receipt.id)
+        try:
+            with session_scope(ctx.sessions) as session:
+                receipt = ctx.service.create(session, body)
+                session.flush()
+                return ctx.service.get(session, receipt.id)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @api.get("/receipts/{receipt_id}", response_model=ReceiptOut)
     def get_receipt(request: Request, receipt_id: str):
@@ -78,6 +81,8 @@ def router() -> APIRouter:
                 return ctx.service.get(session, receipt_id)
         except NotFoundError as exc:
             raise HTTPException(404, str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @api.post("/receipts/{receipt_id}/archive", response_model=ReceiptOut)
     def archive_receipt(request: Request, receipt_id: str):
@@ -90,8 +95,11 @@ def router() -> APIRouter:
     @api.post("/receipts/merge", response_model=ReceiptOut)
     def merge_receipts(request: Request, body: MergeRequest):
         ctx = context(request)
-        with session_scope(ctx.sessions) as session:
-            return ctx.service.merge(session, body.source_ids, body.target_id)
+        try:
+            with session_scope(ctx.sessions) as session:
+                return ctx.service.merge(session, body.source_ids, body.target_id)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @api.post("/receipts/{receipt_id}/attachments", response_model=AttachmentOut)
     def attach_file(request: Request, receipt_id: str, body: AttachFile):

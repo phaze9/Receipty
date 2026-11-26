@@ -33,7 +33,7 @@ The original scripts remain available alongside the workspace server:
 ## Receipt field conventions
 
 - Use `tags` (a JSON list of lowercase English strings) instead of `category`. A receipt can have multiple tags. This is a field convention within the existing arbitrary JSON model, not a dedicated database column or tag picker.
-- Receipts require a non-empty string `title`; `description` is optional. The browser editor exposes these separately and keeps tags in Additional fields (JSON). Receipt search matches tags as part of the JSON fields.
+- Receipts require a non-empty string `title`; `description` is optional. The list view shows `title`; the browser editor exposes both separately (description as a multi-line field) and keeps tags in Additional fields (JSON). Description is removed when it is identical to the title. Receipt search matches tags as part of the JSON fields.
 - REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
 - Keep project documentation general: omit workspace-specific paths, receipt contents, identifiers, and inventories.
 
@@ -56,9 +56,10 @@ The original scripts remain available alongside the workspace server:
 - Always return a clickable receipt detail link when creating a new receipt, including through imports or watcher discovery. Use the connected server's base URL plus `/receipts/<receipt_id>`; include a link for each new receipt even when extraction is pending.
 - `skills/receipty/SKILL.md` is the repo-maintained skill for searching, importing, organizing, and correcting receipts through Receipty MCP tools or the REST API. `skills/receipty/references/api.md` documents REST endpoints and request shapes.
 - The skill covers workspace verification, full-replacement field updates, watcher-created drafts, merge behavior, background extraction, and Apple Photos authorization and attachment modes.
-- On 2026-11-19, the skill was copied to this machine's `~/.hermes/skills/productivity/receipty/`. Installed files were byte-verified against the repo, and `hermes skills list --source local --enabled-only` listed `receipty` as enabled. This is a separate copy; future repo edits need to be copied to Hermes again.
+- On 2026-11-19, the skill was copied to this machine's `~/.hermes/skills/productivity/receipty/` and byte-verified. On 2026-11-27 it was re-copied and byte-verified after adding the title-required/description-optional field rules. The installed files are a separate copy; future repo edits need to be copied to Hermes again.
 - Skill structure validation passed with the skill-creator `quick_validate.py` script. Discovery was verified; an end-to-end Hermes receipt workflow was not run.
 
 ## Verification
 
-- 2026-11-19: `/Users/phaze9/venv/bin/python -m pytest -q` passed all 10 tests. Coverage includes denied-access guidance, permission request error rendering, and receipt preservation, plus the existing receipt, workspace, and managed Photos import tests.
+- 2026-11-19: denied-access guidance, permission request error rendering, and receipt preservation verified; existing receipt, workspace, and managed Photos import tests passed.
+- 2026-11-27: `pytest -q` passed all 11 tests. Coverage includes mandatory title enforcement and backfill, duplicate description removal, and the existing receipt, workspace, and managed Photos import tests.
