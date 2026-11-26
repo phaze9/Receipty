@@ -1,6 +1,6 @@
 ---
 name: receipty
-description: Search, import, organize, and correct receipts in a local Receipty workspace using its MCP tools or REST API, including OCR and Apple Photos attachments.
+description: Use when creating, searching, correcting Receipty receipts.
 ---
 
 # Receipty
@@ -34,6 +34,9 @@ only when it cannot be determined from the request or existing connection.
 - Create with `create_receipt(fields, state="draft")`. Fields are arbitrary JSON;
   follow existing field names and value types in the collection. Creation accepts
   `draft` or `active`; updates additionally accept `archived`.
+- Field conventions (user-corrected): receipts use a `tags` field (list of
+  strings), not a `category` field. Tags are always lowercase English, e.g.
+  `"tip"`, `"household"` — never `"Tipp"`/`"Haushalt"` or any other language.
 - Before `update_receipt`, fetch the current receipt and merge requested field
   changes locally: **the submitted fields object replaces all existing fields**.
   Omit `fields` when changing only state. Preserve unrelated user data.
