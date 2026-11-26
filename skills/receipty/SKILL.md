@@ -88,6 +88,13 @@ be built from `macos/ReceiptyPhotosHelper/build-helper.sh` in the checkout;
 
 ## Verify the result
 
+Whenever creating a receipt, always include a clickable link to it in the final
+reply: `[View receipt](<server-base-url>/receipts/<receipt_id>)`. Use the actual
+connected server's base URL and the returned receipt ID, not the API or MCP URL.
+This also applies to receipts created through file imports and watcher discovery.
+For multiple new receipts, include a link for each one, even if extraction is
+still pending.
+
 Read changed receipts back through the service. Report receipt IDs, the concrete
 changes, and any pending or failed extraction. Preserve unrelated workspace
 entries: only `receipt-files/` and `.receipty/` are reserved by the application.
