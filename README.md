@@ -38,6 +38,20 @@ python3 -m venv .venv
 Open <http://127.0.0.1:9000/> for the UI, `/docs` for the REST API, or connect
 an MCP client to `http://127.0.0.1:9000/mcp/` using Streamable HTTP.
 
+To connect Hermes Agent, register the server with:
+
+```bash
+hermes mcp add receipty --url http://127.0.0.1:9000/mcp/
+```
+
+This exposes 15 tools (workspace_info, rescan_workspace, search_receipts,
+get_receipt, create_receipt, update_receipt, attach_workspace_file,
+merge_receipts, archive_receipt, restore_receipt, retry_extraction,
+list_photos_albums, list_photos_assets, link_photos_asset, link_photos_album),
+prefixed `mcp_receipty_*`. MCP tools load at session start — start a new
+session (or run `/reload-mcp`) after adding the server. Verify with
+`hermes mcp test receipty`.
+
 The server creates only these reserved paths in a workspace:
 
 ```text
