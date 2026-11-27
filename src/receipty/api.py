@@ -97,6 +97,17 @@ def router() -> APIRouter:
     def restore_receipt(request: Request, receipt_id: str):
         return update_receipt(request, receipt_id, ReceiptPatch(state="draft"))
 
+    @api.post("/receipts/{receipt_id}/purge", status_code=204)
+    def purge_receipt(request: Request, receipt_id: str):
+        ctx = context(request)
+        try:
+            with session_scope(ctx.sessions) as session:
+                ctx.service.purge(session, receipt_id)
+        except NotFoundError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
     @api.post("/receipts/merge", response_model=ReceiptOut)
     def merge_receipts(request: Request, body: MergeRequest):
         ctx = context(request)

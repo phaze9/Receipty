@@ -24,6 +24,7 @@ class Receipt(Base):
     state: Mapped[str] = mapped_column(String(16), default="draft", index=True)
     origin: Mapped[str] = mapped_column(String(32), default="manual")
     fields: Mapped[dict] = mapped_column(JSON, default=dict)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     attachments: Mapped[list["Attachment"]] = relationship(

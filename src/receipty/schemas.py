@@ -30,6 +30,7 @@ class ReceiptOut(BaseModel):
     state: str
     origin: str
     fields: dict[str, Any]
+    deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
     attachments: list[AttachmentOut] = []
@@ -44,7 +45,7 @@ class ReceiptCreate(BaseModel):
 
 class ReceiptPatch(BaseModel):
     fields: dict[str, Any] | None = None
-    state: Literal["draft", "active", "archived"] | None = None
+    state: Literal["draft", "active", "archived", "deleted"] | None = None
 
 
 class AttachFile(BaseModel):

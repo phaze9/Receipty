@@ -30,6 +30,15 @@ matches tags along with other fields and extracted text. Through REST or MCP,
 submitting `fields` replaces the entire fields object, so fetch the receipt
 first and preserve unrelated fields.
 
+Receipts move through states `draft`, `active`, `archived` and `deleted`.
+Setting state to `deleted` (detail view combo box, `PATCH /api/v1/receipts/{id}`
+or the MCP `update_receipt` tool) keeps the receipt viewable but read-only and
+stamps it with `deleted_at`; it stays in that state for 30 days. After that
+window, it can be purged permanently via `POST /api/v1/receipts/{id}/purge`
+(or the MCP `purge_receipt` tool) or the Purge button on the detail view.
+Purging deletes the database record and its attachments/jobs, not the files
+on disk. Deleted receipts cannot be edited or restored.
+
 ## Development
 
 Receipty requires Python 3.12 and Tesseract with the English and Thai language
@@ -50,9 +59,9 @@ To connect Hermes Agent, register the server with:
 hermes mcp add receipty --url http://127.0.0.1:9000/mcp/
 ```
 
-This exposes 15 tools (workspace_info, rescan_workspace, search_receipts,
+This exposes 16 tools (workspace_info, rescan_workspace, search_receipts,
 get_receipt, create_receipt, update_receipt, attach_workspace_file,
-merge_receipts, archive_receipt, restore_receipt, retry_extraction,
+merge_receipts, archive_receipt, restore_receipt, purge_receipt, retry_extraction,
 list_photos_albums, list_photos_assets, link_photos_asset, link_photos_album),
 prefixed `mcp_receipty_*`. MCP tools load at session start — start a new
 session (or run `/reload-mcp`) after adding the server. Verify with

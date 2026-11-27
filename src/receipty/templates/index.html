@@ -6,7 +6,7 @@
     {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">
     <input type="hidden" name="direction" value="{{ direction }}">{% endif %}
     <select name="state" onchange="this.form.submit()">
-      {% for value in ["draft", "active", "archived", ""] %}
+      {% for value in ["draft", "active", "archived", "deleted", ""] %}
       <option value="{{ value }}" {% if state == value %}selected{% endif %}>{{ value or "all" }}</option>
       {% endfor %}
     </select>

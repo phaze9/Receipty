@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import mimetypes
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,8 @@ from .extraction import file_identity
 from .models import Attachment, Job, Receipt
 from .schemas import ReceiptCreate, ReceiptPatch
 from .workspace import Workspace
+
+DELETE_RETENTION_DAYS = 30
 
 
 class NotFoundError(LookupError):
@@ -54,14 +57,49 @@ class ReceiptService:
 
     def patch(self, session: Session, receipt_id: str, body: ReceiptPatch) -> Receipt:
         receipt = self.get(session, receipt_id)
+        if receipt.state == "deleted":
+            raise ValueError("Deleted receipts are read-only; purge them to remove permanently")
         if body.fields is not None:
             require_title(body.fields)
             require_date(body.fields)
             receipt.fields = body.fields
         if body.state is not None:
+            if body.state == "deleted" and receipt.state != "deleted":
+                receipt.deleted_at = datetime.now(timezone.utc)
+            elif body.state != "deleted":
+                receipt.deleted_at = None
             receipt.state = body.state
         session.flush()
         return receipt
+
+    def purge(self, session: Session, receipt_id: str) -> None:
+        receipt = self.get(session, receipt_id)
+        if receipt.state != "deleted":
+            raise ValueError("Only deleted receipts can be purged")
+        if receipt.deleted_at is not None:
+            deleted_at = receipt.deleted_at
+            if deleted_at.tzinfo is None:
+                deleted_at = deleted_at.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - deleted_at < timedelta(days=DELETE_RETENTION_DAYS):
+                raise ValueError(
+                    f"Receipt must stay in deleted state for {DELETE_RETENTION_DAYS} days before purging"
+                )
+        attachment_ids = [a.id for a in receipt.attachments]
+        for attachment_id in attachment_ids:
+            for job in session.scalars(select(Job).where(Job.attachment_id == attachment_id)):
+                session.delete(job)
+        session.delete(receipt)
+        session.flush()
+
+    def purgeable(self, receipt: Receipt) -> bool:
+        if receipt.state != "deleted":
+            return False
+        if receipt.deleted_at is None:
+            return True
+        deleted_at = receipt.deleted_at
+        if deleted_at.tzinfo is None:
+            deleted_at = deleted_at.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) - deleted_at >= timedelta(days=DELETE_RETENTION_DAYS)
 
     def list(
         self, session: Session, *, query: str | None = None, state: str | None = None,

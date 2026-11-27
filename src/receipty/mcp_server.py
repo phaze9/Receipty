@@ -99,6 +99,13 @@ def build_mcp(context):
             return ReceiptOut.model_validate(receipt).model_dump(mode="json")
 
     @mcp.tool()
+    def purge_receipt(receipt_id: str) -> dict[str, Any]:
+        """Permanently delete a deleted receipt (after the retention period)."""
+        with session_scope(context.sessions) as session:
+            context.service.purge(session, receipt_id)
+            return {"purged": receipt_id}
+
+    @mcp.tool()
     def retry_extraction(attachment_id: str) -> dict[str, str]:
         """Queue attachment text extraction again."""
         context.worker.retry(attachment_id)

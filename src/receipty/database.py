@@ -28,8 +28,17 @@ def create_database(path: Path):
     from . import models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    _migrate(engine)
     factory = sessionmaker(engine, expire_on_commit=False)
     return engine, factory
+
+
+def _migrate(engine) -> None:
+    """Lightweight column migrations for databases created before a column existed."""
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(receipts)")}
+        if "deleted_at" not in columns:
+            conn.exec_driver_sql("ALTER TABLE receipts ADD COLUMN deleted_at DATETIME")
 
 
 @contextmanager

@@ -3,6 +3,21 @@
 {% block content %}
 <a href="/">← Inbox</a>
 <h1>{{ title or "Receipt" }}</h1>
+{% if receipt.state == "deleted" %}
+<div class="deleted-banner">
+  <strong>Deleted</strong>{% if receipt.deleted_at %} on {{ receipt.deleted_at.strftime("%Y-%m-%d") }}{% endif %} — read-only.
+  {% if purgeable %}Purge it now, or it will stay in deleted state until you purge it.{% else %}It can be purged {{ retention_days }} days after deletion.{% endif %}
+</div>
+<dl class="readonly-fields">
+  <dt>Date</dt><dd>{{ date }}</dd>
+  {% if description %}<dt>Description</dt><dd>{{ description }}</dd>{% endif %}
+  <dt>State</dt><dd>{{ receipt.state }}</dd>
+  <dt>Additional fields</dt><dd><pre>{{ fields_json }}</pre></dd>
+</dl>
+<form method="post" action="/receipts/{{ receipt.id }}/purge">
+  <button class="danger" {% if not purgeable %}disabled{% endif %}>Purge</button>
+</form>
+{% else %}
 <form method="post" class="editor">
   <label>Title
     <input name="title" value="{{ title }}" required>
@@ -20,7 +35,7 @@
   </label>
   <label>State
     <select name="state">
-      {% for value in ["draft", "active", "archived"] %}
+      {% for value in ["draft", "active", "archived", "deleted"] %}
       <option {% if receipt.state == value %}selected{% endif %}>{{ value }}</option>
       {% endfor %}
     </select>
@@ -30,8 +45,9 @@
   </label>
   <button>Save</button>
 </form>
+{% endif %}
 <h2>Attachments</h2>
-<p><a href="/photos?receipt_id={{ receipt.id }}">Attach from Apple Photos</a></p>
+{% if receipt.state != "deleted" %}<p><a href="/photos?receipt_id={{ receipt.id }}">Attach from Apple Photos</a></p>{% endif %}
 {% for attachment in receipt.attachments %}
 <article class="attachment">
   <strong>{{ attachment.name }}</strong><span>{{ attachment.status }}</span>

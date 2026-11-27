@@ -7,6 +7,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from .service import DELETE_RETENTION_DAYS
 from .database import session_scope
 from .photos import PhotosUnavailable
 from .schemas import ReceiptCreate, ReceiptPatch
@@ -84,6 +85,8 @@ def router() -> APIRouter:
                     "date": receipt.fields.get("date", ""),
                     "description": receipt.fields.get("description", ""),
                     "fields_json": json.dumps(extras, indent=2),
+                    "purgeable": ctx.service.purgeable(receipt),
+                    "retention_days": DELETE_RETENTION_DAYS,
                 },
             )
 
@@ -116,6 +119,16 @@ def router() -> APIRouter:
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
+
+    @ui.post("/receipts/{receipt_id}/purge")
+    def purge(request: Request, receipt_id: str):
+        ctx = request.app.state.context
+        try:
+            with session_scope(ctx.sessions) as session:
+                ctx.service.purge(session, receipt_id)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return RedirectResponse("/", status_code=303)
 
     @ui.get("/photos", response_class=HTMLResponse)
     def photos(request: Request, receipt_id: str | None = None, album_id: str | None = None):

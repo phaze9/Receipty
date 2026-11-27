@@ -144,3 +144,69 @@ def test_title_and_date_are_mandatory_and_backfill_legacy_receipts(tmp_path: Pat
             assert app.state.context.service.backfill_required_fields(session) == 1
             receipt = session.scalar(select(Receipt).where(Receipt.id == receipt_id))
             assert receipt.fields == {"title": "Cafe", "date": "todo"}
+
+
+def test_delete_purge_flow_and_read_only(tmp_path: Path):
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import select
+
+    from receipty.database import session_scope
+    from receipty.models import Receipt
+
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/receipts",
+            json={"fields": {"title": "Cafe", "date": "2026-11-27"}},
+        )
+        assert created.status_code == 201
+        receipt_id = created.json()["id"]
+
+        deleted = client.patch(f"/api/v1/receipts/{receipt_id}", json={"state": "deleted"})
+        assert deleted.status_code == 200
+        assert deleted.json()["state"] == "deleted"
+        assert deleted.json()["deleted_at"] is not None
+
+        # Read-only: fields and state changes are refused.
+        assert client.patch(f"/api/v1/receipts/{receipt_id}", json={"fields": {"title": "X", "date": "todo"}}).status_code == 400
+        assert client.patch(f"/api/v1/receipts/{receipt_id}", json={"state": "draft"}).status_code == 400
+        assert client.post(f"/api/v1/receipts/{receipt_id}/restore").status_code == 400
+
+        # Purge is blocked inside the retention window.
+        blocked = client.post(f"/api/v1/receipts/{receipt_id}/purge")
+        assert blocked.status_code == 400
+
+        # After the window passes, purge succeeds and the receipt is gone.
+        with session_scope(app.state.context.sessions) as session:
+            receipt = session.scalar(select(Receipt).where(Receipt.id == receipt_id))
+            receipt.deleted_at = datetime.now(timezone.utc) - timedelta(days=31)
+
+        purged = client.post(f"/api/v1/receipts/{receipt_id}/purge")
+        assert purged.status_code == 204
+        assert client.get(f"/api/v1/receipts/{receipt_id}").status_code == 404
+
+
+def test_deleted_receipt_detail_view_shows_purge_button(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/receipts",
+            json={"fields": {"title": "Cafe", "date": "2026-11-27"}},
+        )
+        receipt_id = created.json()["id"]
+        assert client.patch(f"/api/v1/receipts/{receipt_id}", json={"state": "deleted"}).status_code == 200
+
+        page = client.get(f"/receipts/{receipt_id}")
+        assert page.status_code == 200
+        assert "Purge" in page.text
+        assert "Save" not in page.text
+        assert 'action="/receipts/%s/purge"' % receipt_id in page.text
+
+        # Purge is disabled while still inside the retention window.
+        assert "disabled" in page.text
+
+        # List view shows the deleted state filter.
+        assert "deleted" in client.get("/", params={"state": "deleted"}).text
