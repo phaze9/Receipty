@@ -46,7 +46,10 @@ The original scripts remain available alongside the workspace server:
   forms are flex:1 1 0 so the line fills the available width, both main inputs
   (`query` and `title`) flex to equal width, the state select is fixed at 7rem
   (border-box), the date picker is ~8.5rem, and the Search/Create buttons are
-  fixed at 5.5rem.
+  fixed at 5.5rem. The quick-create right-hand column (`.create-col`) stacks the
+  todo checkbox at the top of the row and the Create button at the bottom,
+  filling the full row height (like the Search button); the button grows with
+  the space below the checkbox and is slimmer than the Search button.
   The toolbar gap is 1.5rem. The detail editor still exposes `description`.
   When the fields would drop below 250px wide (toolbar container < 962px, a
   `@container` rule with a `@media (max-width: 1070px)` fallback), both forms
@@ -55,8 +58,9 @@ The original scripts remain available alongside the workspace server:
   `<input type="date">` picker (YYYY-MM-DD) plus a "todo" checkbox. The picker
   is unnamed; a hidden `name="date"` input carries the submitted value —
   `"todo"` when the checkbox is checked, otherwise the picker's date. The
-  shared `static/date-picker.js` (loaded by `base.html`) greys the picker
-  when "todo" is checked and syncs the hidden field on change. Hidden value
+  shared `static/date-picker.js` (loaded by `base.html`) disables and greys the
+  picker when "todo" is checked, finds the checkbox and hidden input via the
+  enclosing form, and syncs the hidden field on change. Hidden value
   empty + unchecked => server 400 (unchanged). The list-view CSS gives the
   picker ~8.5rem.
 - REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
@@ -95,3 +99,4 @@ The original scripts remain available alongside the workspace server:
 - 2026-11-27: the receipt list gained sorting by date and title (UI "Sort by" bar, REST `sort`/`direction` query params; date sort pins "todo" dates last). `pytest -q` passed all 13 tests; the UI was verified live in a browser (sort links, active state, toggle). Note: a running server keeps its loaded Python code — restart it after code changes or the UI can render new templates against stale routes (e.g. empty sort-bar links).
 - 2026-11-27: the state select on the list view now submits the search form immediately on change (`onchange` → `form.submit()`), with hidden `sort`/`direction` inputs so a state change keeps the active sort. `pytest -q` passed all 14 tests.
 - 2026-11-27: the toolbar text fields above the list view (search `query` and quick-create `title`) select their existing text on click/tab-focus via the new shared `static/select-on-focus.js` (loaded by `base.html`). Focus defers `select()` past the browser's caret placement; click re-asserts it after mouseup. `pytest -q` passed all 14 tests. Live browser confirmation of the selection was not completed (browser session unresponsive); the served JS was verified over HTTP but visual selection is unconfirmed.
+- 2026-11-27: the list-view quick-create right-hand column was restructured — the todo checkbox now sits above the Create button inside a `.create-col` that spans the full row height (checkbox pinned to the top, button pinned to the bottom filling the space below), so the button is slimmer than the Search button but the row height is unchanged. The shared date-picker JS now also sets `picker.disabled` when todo is checked (previously only greyed the picker), and resolves the checkbox/hidden input via the enclosing form so it works for the moved checkbox in the quick-create column. `pytest -q` passed all 14 tests; layout verified live in a browser (form 46px, column 46px, button 25px, checkbox top-aligned, button bottom-aligned) and the picker enable/disable toggle was exercised by clicking the checkbox.

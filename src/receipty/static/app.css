@@ -33,6 +33,9 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 .toolbar form.search input[name="query"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
 .toolbar form.search select { flex: 0 0 7rem; }
 .toolbar form.search button, .toolbar form.quick-create button { flex: 0 0 5.5rem; }
+.quick-create .create-col { flex: 0 0 auto; align-self: stretch; display: flex; flex-direction: column; justify-content: flex-start; gap: .1rem; }
+form.quick-create .create-col button { flex: 1 1 auto; width: 5.5rem; height: auto; padding: .1rem .4rem; line-height: 1.2; font-size: .8rem; }
+.quick-create .todo-toggle { font-size: .8rem; justify-content: center; }
 
 /* Stack search and quick-create forms when the fields would drop below 250px */
 .toolbar { container-type: inline-size; }
