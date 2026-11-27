@@ -59,3 +59,17 @@ def test_ui_sort_by_date_and_title(tmp_path: Path):
         assert [item["fields"]["title"] for item in data] == ["Bravo", "Alpha", "Charlie"]
         bad = client.get("/api/v1/receipts", params={"sort": "bogus"})
         assert bad.status_code == 400
+
+
+def test_state_select_submits_form_immediately(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        page = client.get("/", params={"sort": "date", "direction": "desc"})
+        assert 'name="state" onchange="this.form.submit()"' in page.text
+        assert 'type="hidden" name="sort" value="date"' in page.text
+        assert 'type="hidden" name="direction" value="desc"' in page.text
+
+        page = client.get("/", params={"state": "active"})
+        assert 'name="state" onchange="this.form.submit()"' in page.text
+        assert 'name="sort"' not in page.text

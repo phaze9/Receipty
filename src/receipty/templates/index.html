@@ -3,7 +3,9 @@
 <section class="toolbar">
   <form method="get" class="search">
     <input name="query" value="{{ query }}" placeholder="Search receipts and extracted text">
-    <select name="state">
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">
+    <input type="hidden" name="direction" value="{{ direction }}">{% endif %}
+    <select name="state" onchange="this.form.submit()">
       {% for value in ["draft", "active", "archived", ""] %}
       <option value="{{ value }}" {% if state == value %}selected{% endif %}>{{ value or "all" }}</option>
       {% endfor %}
