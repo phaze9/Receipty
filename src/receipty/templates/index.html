@@ -36,6 +36,8 @@
       <strong>{{ receipt.fields.get("title") or receipt.id }}</strong>
       <span>{{ receipt.fields.get("date") or "todo" }} · {{ receipt.state }} · {{ receipt.attachments|length }} attachment(s)</span>
     </div>
+    {% set description = receipt.fields.get("description") %}
+    {% if description %}<small class="card-desc">{{ description }}</small>{% endif %}
     {% for attachment in receipt.attachments[:2] %}<small>{{ attachment.name }} — {{ attachment.status }}</small>{% endfor %}
   </a>
   {% else %}<p>No receipts found.</p>{% endfor %}

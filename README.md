@@ -8,7 +8,8 @@ files remain ordinary files inside the workspace.
 
 Receipts have a required, non-empty `title` and `date` (use `"todo"` when the
 date is unknown), and an optional `description`; the
-list view shows `title` and `date`. The list view can be sorted by date or title
+list view shows `title`, `date`, and the optional `description` (when set).
+The list view can be sorted by date or title
 with the "Sort by" bar — clicking a key applies it, clicking again toggles the
 direction. Date sorting pins `"todo"` dates last; the REST API accepts the same
 with `sort=date|title` and `direction=asc|desc` query parameters.

@@ -62,3 +62,4 @@ form.quick-create .create-col button { flex: 1 1 auto; width: 5.5rem; height: au
 .sort-bar a { color: #32694f; font-weight: 600; text-decoration: none; padding: .2rem .5rem; border-radius: .3rem; }
 .sort-bar a:hover { background: #e8e4d9; }
 .sort-bar a.active { background: #32694f; color: white; }
+.card .card-desc { display: block; margin-top: .35rem; white-space: pre-wrap; }

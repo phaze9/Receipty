@@ -73,3 +73,17 @@ def test_state_select_submits_form_immediately(tmp_path: Path):
         page = client.get("/", params={"state": "active"})
         assert 'name="state" onchange="this.form.submit()"' in page.text
         assert 'name="sort"' not in page.text
+
+
+def test_ui_list_shows_description(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/receipts",
+            data={"title": "Cafe", "date": "todo", "description": "Morning latte"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        page = client.get("/")
+        assert "Morning latte" in page.text

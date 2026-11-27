@@ -38,7 +38,7 @@ only when it cannot be determined from the request or existing connection.
   `date`; requests without one fail with a validation error. Use `"todo"` as the
   `date` when it is unknown. `description` is optional and displayed separately
   in the UI. A `description` identical to the `title` is removed rather than
-  stored twice. The list view shows `title` and `date`.
+  stored twice. The list view shows `title`, `date`, and the optional `description` (when set).
 - Field conventions (user-corrected): receipts use a `tags` field (list of
   strings), not a `category` field. Tags are always lowercase English, e.g.
   `"tip"`, `"household"` — never `"Tipp"`/`"Haushalt"` or any other language.

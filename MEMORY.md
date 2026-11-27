@@ -36,7 +36,8 @@ The original scripts remain available alongside the workspace server:
 - Use `tags` (a JSON list of lowercase English strings) instead of `category`. A receipt can have multiple tags. This is a field convention within the existing arbitrary JSON model, not a dedicated database column or tag picker.
 - Receipts require a non-empty string `title` and `date`; `date` may be the
   literal `"todo"` when unknown. `description` is optional. The list view shows
-  `title` and `date`; the browser editor exposes all three separately (description
+  `title`, `date`, and the optional `description` (when set); the browser
+  editor exposes all three separately (description
   as a multi-line field) and keeps tags in Additional fields (JSON). Description
   is removed when it is identical to the title. Receipt search matches tags as
   part of the JSON fields. Legacy receipts missing `title` or `date` are backfilled
@@ -101,3 +102,4 @@ The original scripts remain available alongside the workspace server:
 - 2026-11-27: the toolbar text fields above the list view (search `query` and quick-create `title`) select their existing text on click/tab-focus via the new shared `static/select-on-focus.js` (loaded by `base.html`). Focus defers `select()` past the browser's caret placement; click re-asserts it after mouseup. `pytest -q` passed all 14 tests. Live browser confirmation of the selection was not completed (browser session unresponsive); the served JS was verified over HTTP but visual selection is unconfirmed.
 - 2026-11-27: the list-view quick-create right-hand column was restructured — the todo checkbox now sits above the Create button inside a `.create-col` that spans the full row height (checkbox pinned to the top, button pinned to the bottom filling the space below), so the button is slimmer than the Search button but the row height is unchanged. The shared date-picker JS now also sets `picker.disabled` when todo is checked (previously only greyed the picker), and resolves the checkbox/hidden input via the enclosing form so it works for the moved checkbox in the quick-create column. `pytest -q` passed all 14 tests; layout verified live in a browser (form 46px, column 46px, button 25px, checkbox top-aligned, button bottom-aligned) and the picker enable/disable toggle was exercised by clicking the checkbox.
 - 2026-11-27: the list-view card meta line (date · state · attachment count) is wrapped in a `.card-head`; below 760px viewport it stacks under the title as before, at 760px+ title and meta sit side by side with the meta right-aligned (`text-align: right`). `pytest -q` passed all 14 tests.
+- 2026-11-27: the list-view receipt card now shows the optional `description` (as a `.card-desc` small line between the `.card-head` and the attachment lines, rendered only when set, with `white-space: pre-wrap`). `pytest -q` passed all 15 tests.
