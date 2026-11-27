@@ -90,7 +90,7 @@ not logged.
 Configuration via environment variables (logging is skipped entirely when the
 two required values are unset):
 
-- `RECEIPTY_LOG=0` — disable action logging.
+- `RECEIPTY_LOG=1` — enable action logging (off by default).
 - `RECEIPTY_LLM_URL` — chat-completions endpoint (required).
 - `RECEIPTY_MODEL_CONNECT` — path to `model_connect.py` (required).
 - `MODEL_CONNECT_API_KEY` — Bearer key (falls back to `OMLX_BBY_API_KEY`).

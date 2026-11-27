@@ -4,9 +4,10 @@ Actions performed in the Receipty server — browser UI, REST API, or MCP tools 
 are logged to LOG.md in the workspace root. Each entry's message is generated
 by an LLM via a model-connect library of the deployment's choice.
 
-Configuration (env vars; logging is skipped entirely when either of the two
+Configuration (env vars; logging is off by default — set RECEIPTY_LOG to
+1/true/on/yes to enable; logging is skipped entirely when either of the two
 required values is unset):
-  RECEIPTY_LOG           Set to 0/false/off to disable logging (default on).
+  RECEIPTY_LOG           Enable logging (default off).
   RECEIPTY_LLM_URL       Chat-completions endpoint (required).
   RECEIPTY_MODEL_CONNECT Path to model_connect.py (required).
   MODEL_CONNECT_API_KEY  Bearer key (falls back to OMLX_BBY_API_KEY).
@@ -43,7 +44,7 @@ def _log_path(workspace) -> Path:
 
 
 def _enabled() -> bool:
-    return os.environ.get("RECEIPTY_LOG", "1").strip().lower() not in ("0", "false", "off", "")
+    return os.environ.get("RECEIPTY_LOG", "").strip().lower() in ("1", "true", "on", "yes")
 
 
 def _llm_url() -> str:

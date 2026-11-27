@@ -175,3 +175,24 @@ def test_log_file_is_append_only(tmp_path: Path, monkeypatch):
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert "message 1" in log
     assert "message 2" in log
+
+
+def test_default_disabled_when_unset(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("RECEIPTY_LOG", raising=False)
+    called = []
+
+    def fake(action, detail, channel="UI"):
+        called.append(action)
+        return "message"
+
+    monkeypatch.setattr(receipt_log, "generate_message", fake)
+    app = create_app(tmp_path / "workspace", start_background=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/receipts",
+            data={"title": "Cafe", "date": "todo", "description": ""},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+    assert called == []
+    assert not (tmp_path / "workspace" / "LOG.md").exists()
