@@ -32,8 +32,10 @@
 <section class="cards">
   {% for receipt in receipts %}
   <a class="card" href="/receipts/{{ receipt.id }}">
-    <strong>{{ receipt.fields.get("title") or receipt.id }}</strong>
-    <span>{{ receipt.fields.get("date") or "todo" }} · {{ receipt.state }} · {{ receipt.attachments|length }} attachment(s)</span>
+    <div class="card-head">
+      <strong>{{ receipt.fields.get("title") or receipt.id }}</strong>
+      <span>{{ receipt.fields.get("date") or "todo" }} · {{ receipt.state }} · {{ receipt.attachments|length }} attachment(s)</span>
+    </div>
     {% for attachment in receipt.attachments[:2] %}<small>{{ attachment.name }} — {{ attachment.status }}</small>{% endfor %}
   </a>
   {% else %}<p>No receipts found.</p>{% endfor %}
