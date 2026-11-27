@@ -19,14 +19,36 @@ def router() -> APIRouter:
     ui = APIRouter()
 
     @ui.get("/", response_class=HTMLResponse)
-    def index(request: Request, query: str | None = None, state: str = "draft"):
+    def index(
+        request: Request,
+        query: str | None = None,
+        state: str = "draft",
+        sort: str | None = None,
+        direction: str | None = None,
+    ):
         ctx = request.app.state.context
+        if sort not in ("date", "title"):
+            sort, direction = None, None
+        if sort and direction not in ("asc", "desc"):
+            direction = "desc" if sort == "date" else "asc"
+        if sort and not direction:
+            direction = "desc" if sort == "date" else "asc"
         with session_scope(ctx.sessions) as session:
-            receipts = ctx.service.list(session, query=query, state=state or None)
+            receipts = ctx.service.list(session, query=query, state=state or None, sort=sort, direction=direction or "asc")
+            params = {"state": state}
+            if query:
+                params["query"] = query
+            def href(field, dir):
+                return "/?" + urlencode({**params, "sort": field, "direction": dir})
             return templates.TemplateResponse(
                 request,
                 "index.html",
-                {"receipts": receipts, "query": query or "", "state": state},
+                {
+                    "receipts": receipts, "query": query or "", "state": state,
+                    "sort": sort, "direction": direction,
+                    "href_date": href("date", "asc" if sort == "date" and direction == "desc" else "desc"),
+                    "href_title": href("title", "desc" if sort == "title" and direction == "asc" else "asc"),
+                },
             )
 
     @ui.post("/receipts")

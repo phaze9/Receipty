@@ -8,8 +8,13 @@ files remain ordinary files inside the workspace.
 
 Receipts have a required, non-empty `title` and `date` (use `"todo"` when the
 date is unknown), and an optional `description`; the
-list view shows `title` and `date`. If `description` is identical to `title`, it
-is removed. Legacy receipts missing a title or date are backfilled on startup
+list view shows `title` and `date`. The list view can be sorted by date or title
+with the "Sort by" bar — clicking a key applies it, clicking again toggles the
+direction. Date sorting pins `"todo"` dates last; the REST API accepts the same
+with `sort=date|title` and `direction=asc|desc` query parameters.
+
+If `description` is identical to `title`, it is removed. Legacy receipts missing
+a title or date are backfilled on startup
 (title from description or first attachment name, date to `"todo"`). Organize
 receipts with `tags`, a list of lowercase English strings,
 instead of a `category` field. A receipt can have multiple tags:

@@ -4,7 +4,7 @@ import mimetypes
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import String, cast, or_, select
+from sqlalchemy import String, case, cast, or_, select
 from sqlalchemy.orm import Session, selectinload, sessionmaker
 
 from .extraction import file_identity
@@ -66,8 +66,27 @@ class ReceiptService:
     def list(
         self, session: Session, *, query: str | None = None, state: str | None = None,
         field_filters: dict[str, Any] | None = None, offset: int = 0, limit: int = 50,
+        sort: str | None = None, direction: str = "asc",
     ) -> list[Receipt]:
-        statement = self._receipt_query().order_by(Receipt.updated_at.desc())
+        if sort is not None and sort not in ("date", "title"):
+            raise ValueError("sort must be 'date' or 'title'")
+        if direction not in ("asc", "desc"):
+            raise ValueError("direction must be 'asc' or 'desc'")
+        statement = self._receipt_query()
+        if sort:
+            key = Receipt.fields[sort].as_string()
+            if sort == "date":
+                # Pin "todo" dates last regardless of direction.
+                statement = statement.order_by(
+                    case((key == "todo", 1), else_=0),
+                    key.asc() if direction == "asc" else key.desc(),
+                )
+            else:
+                statement = statement.order_by(
+                    key.asc() if direction == "asc" else key.desc()
+                )
+        else:
+            statement = statement.order_by(Receipt.updated_at.desc())
         if state:
             statement = statement.where(Receipt.state == state)
         for key, value in (field_filters or {}).items():

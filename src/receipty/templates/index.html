@@ -20,6 +20,11 @@
     <button>Create</button>
   </form>
 </section>
+<section class="sort-bar">
+  <span>Sort by</span>
+  <a class="{% if sort == 'date' %}active{% endif %}" href="{{ href_date }}">Date{% if sort == 'date' %} {{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a>
+  <a class="{% if sort == 'title' %}active{% endif %}" href="{{ href_title }}">Title{% if sort == 'title' %} {{ '↑' if direction == 'asc' else '↓' }}{% endif %}</a>
+</section>
 <section class="cards">
   {% for receipt in receipts %}
   <a class="card" href="/receipts/{{ receipt.id }}">

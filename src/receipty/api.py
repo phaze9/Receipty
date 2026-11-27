@@ -43,14 +43,19 @@ def router() -> APIRouter:
         field_value: str | None = None,
         offset: int = Query(0, ge=0),
         limit: int = Query(50, ge=1, le=200),
+        sort: str | None = None,
+        direction: str = "asc",
     ):
         ctx = context(request)
         with session_scope(ctx.sessions) as session:
-            return ctx.service.list(
-                session, query=query, state=state,
-                field_filters={field_key: field_value} if field_key and field_value is not None else None,
-                offset=offset, limit=limit
-            )
+            try:
+                return ctx.service.list(
+                    session, query=query, state=state,
+                    field_filters={field_key: field_value} if field_key and field_value is not None else None,
+                    offset=offset, limit=limit, sort=sort, direction=direction,
+                )
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
 
     @api.post("/receipts", response_model=ReceiptOut, status_code=201)
     def create_receipt(request: Request, body: ReceiptCreate):

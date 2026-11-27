@@ -49,3 +49,7 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 .todo-toggle input { width: auto; padding: 0; }
 .editor .date-block { display: grid; gap: .35rem; }
 .editor .date-block .field-label { font-weight: 600; }
+.sort-bar { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; color: #68645d; }
+.sort-bar a { color: #32694f; font-weight: 600; text-decoration: none; padding: .2rem .5rem; border-radius: .3rem; }
+.sort-bar a:hover { background: #e8e4d9; }
+.sort-bar a.active { background: #32694f; color: white; }
