@@ -32,3 +32,12 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 .toolbar form.search input[name="query"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
 .toolbar form.search select { flex: 0 0 7rem; }
 .toolbar form.search button, .toolbar form.quick-create button { flex: 0 0 5.5rem; }
+
+/* Stack search and quick-create forms when the fields would drop below 250px */
+.toolbar { container-type: inline-size; }
+@container (max-width: 962px) {
+  .toolbar form { flex-basis: 100%; }
+}
+@media (max-width: 1070px) {
+  .toolbar form { flex-basis: 100%; }
+}
