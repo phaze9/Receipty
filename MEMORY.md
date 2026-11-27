@@ -43,12 +43,21 @@ The original scripts remain available alongside the workspace server:
 - The quick-create form on the list view shows only `title` and `date` (no
   description). It sits next to the search form on the same toolbar line: both
   forms are flex:1 1 0 so the line fills the available width, both main inputs
-  (`query` and `title`) flex to equal width, the state select and date are
-  fixed at 7rem (border-box), and the Search/Create buttons are fixed at 5.5rem.
+  (`query` and `title`) flex to equal width, the state select is fixed at 7rem
+  (border-box), the date picker is ~8.5rem, and the Search/Create buttons are
+  fixed at 5.5rem.
   The toolbar gap is 1.5rem. The detail editor still exposes `description`.
   When the fields would drop below 250px wide (toolbar container < 962px, a
   `@container` rule with a `@media (max-width: 1070px)` fallback), both forms
   stack full-width on separate lines (mobile-first).
+- Both date fields (quick-create and the detail editor) use a native
+  `<input type="date">` picker (YYYY-MM-DD) plus a "todo" checkbox. The picker
+  is unnamed; a hidden `name="date"` input carries the submitted value —
+  `"todo"` when the checkbox is checked, otherwise the picker's date. The
+  shared `static/date-picker.js` (loaded by `base.html`) greys the picker
+  when "todo" is checked and syncs the hidden field on change. Hidden value
+  empty + unchecked => server 400 (unchanged). The list-view CSS gives the
+  picker ~8.5rem.
 - REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
 - Keep project documentation general: omit workspace-specific paths, receipt contents, identifiers, and inventories.
 
@@ -81,3 +90,4 @@ The original scripts remain available alongside the workspace server:
 - 2026-11-27: the list-view quick-create form was changed to title+date only (description removed) and laid out on one toolbar line (search form left, title filling the remaining space, fixed 7rem date, 1.5rem toolbar gap). Layout was verified live in a browser (element rects and date-overflow check with a sample date) on a scratch workspace; the 12 tests were re-run after the CSS changes.
 - 2026-11-27: search and title fields in the list-view toolbar were made equal width (both forms flex:1 1 0, both inputs flex:1 1 auto, state select and date fixed at 7rem, Search/Create buttons fixed at 5.5rem, toolbar gap 1.5rem). `pytest -q` passed all 12 tests after the CSS changes.
 - 2026-11-27: the list-view toolbar became a CSS container and both forms stack full-width on separate lines when the search/title inputs would drop below 250px (`@container (max-width: 962px)` with a `@media (max-width: 1070px)` fallback). Verified live in a browser at 1280px (side by side, 268.8px inputs) and 375px (stacked) plus 756px (stacked); `pytest -q` passed all 12 tests.
+- 2026-11-27: the quick-create and detail date fields were changed from free-text inputs to native date pickers (YYYY-MM-DD) with a "todo" checkbox. `pytest -q` passed all 12 tests; pages were rendered over HTTP and the picker, hidden input, checkbox, and shared JS were verified in the markup and the JS served 200. Browser popup behavior not visually verified.

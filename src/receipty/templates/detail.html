@@ -7,9 +7,14 @@
   <label>Title
     <input name="title" value="{{ title }}" required>
   </label>
-  <label>Date
-    <input name="date" value="{{ date }}" placeholder="YYYY-MM-DD or todo" required>
-  </label>
+  <div class="date-block">
+    <span class="field-label">Date</span>
+    <span class="date-field">
+      <input type="date" class="date-picker" value="{{ date if date != 'todo' else '' }}">
+      <label class="todo-toggle"><input type="checkbox" {% if date == 'todo' %}checked{% endif %}> todo (unknown)</label>
+      <input type="hidden" name="date" value="{{ date }}">
+    </span>
+  </div>
   <label>Description
     <textarea name="description" rows="4">{{ description }}</textarea>
   </label>

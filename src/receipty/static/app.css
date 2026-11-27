@@ -27,7 +27,8 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 .editor textarea[name="description"] { font-family: inherit; }
 .quick-create { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
 .quick-create input[name="title"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
-.quick-create input[name="date"] { flex: 0 0 7rem; min-width: 0; width: 7rem; box-sizing: border-box; }
+.quick-create .date-field { flex: 0 0 auto; display: flex; align-items: center; gap: .4rem; }
+.quick-create .date-picker { width: 8.5rem; box-sizing: border-box; }
 .toolbar form { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
 .toolbar form.search input[name="query"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
 .toolbar form.search select { flex: 0 0 7rem; }
@@ -41,3 +42,10 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 @media (max-width: 1070px) {
   .toolbar form { flex-basis: 100%; }
 }
+
+.date-field { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.date-picker.dimmed { opacity: .45; }
+.todo-toggle { display: flex; align-items: center; gap: .3rem; font-size: .85rem; white-space: nowrap; cursor: pointer; }
+.todo-toggle input { width: auto; padding: 0; }
+.editor .date-block { display: grid; gap: .35rem; }
+.editor .date-block .field-label { font-weight: 600; }

@@ -12,7 +12,11 @@
   </form>
   <form method="post" action="/receipts" class="quick-create">
     <input name="title" placeholder="New receipt title" required>
-    <input name="date" value="todo" placeholder="YYYY-MM-DD or todo" required>
+    <span class="date-field">
+      <input type="date" class="date-picker">
+      <label class="todo-toggle"><input type="checkbox" checked> todo</label>
+      <input type="hidden" name="date" value="todo">
+    </span>
     <button>Create</button>
   </form>
 </section>
