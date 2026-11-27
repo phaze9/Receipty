@@ -33,7 +33,7 @@ only when it cannot be determined from the request or existing connection.
   Without a state filter, archived receipts are included.
 - Create with `create_receipt(fields, state="draft")`. Fields are arbitrary JSON;
   follow existing field names and value types in the collection. Creation accepts
-  `draft` or `active`; updates additionally accept `archived`.
+  `draft` or `active`; updates additionally accept `archived` or `deleted`.
 - Every receipt requires a non-empty string `title` and a non-empty string
   `date`; requests without one fail with a validation error. Use `"todo"` as the
   `date` when it is unknown. `description` is optional and displayed separately
@@ -62,6 +62,13 @@ only when it cannot be determined from the request or existing connection.
   attachment movement.
 - `archive_receipt` preserves files. `restore_receipt` returns the receipt to
   `draft`, even if it was previously active. Do not treat archival as deletion.
+- Deletion: set `state` to `deleted` (or `update_receipt`) to delete a receipt.
+  The receipt stays viewable but read-only — `update_receipt` refuses changes —
+  and is kept for 30 days (`deleted_at` is stamped on transition to deleted).
+  After 30 days it is purgeable via `purge_receipt(receipt_id)` or
+  `POST /receipts/{id}/purge`; purging deletes the receipt, its attachments and
+  jobs from the database but leaves files on disk untouched. Purge is refused
+  while the receipt is not deleted or still inside the retention window.
 
 ## Extraction and interpretation
 

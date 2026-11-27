@@ -11,8 +11,9 @@ interpreting a response as a result. The server accepts loopback connections.
 | Search/list | `GET /receipts` | Query: `query`, `state`, `field_key`, `field_value`, `offset`, `limit` (1–200) |
 | Get receipt | `GET /receipts/{id}` | Includes fields and attachment extraction results |
 | Create | `POST /receipts` | `{"fields": {...}, "state": "draft"}` |
-| Update | `PATCH /receipts/{id}` | Optional `fields` (full replacement), `state` |
+| Update | `PATCH /receipts/{id}` | Optional `fields` (full replacement), `state` (`draft`, `active`, `archived`, `deleted`) |
 | Archive/restore | `POST /receipts/{id}/archive` or `/restore` | No body; restore sets draft |
+| Purge | `POST /receipts/{id}/purge` | No body; only deleted receipts past the 30-day retention window; deletes DB records, leaves files on disk |
 | Merge | `POST /receipts/merge` | `{"source_ids": ["..."], "target_id": "..."}` |
 | Attach file | `POST /receipts/{id}/attachments` | `{"path": "receipt-files/2026/example.pdf"}` |
 | Source file | `GET /attachments/{id}/content` | Binary response |
