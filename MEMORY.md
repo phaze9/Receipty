@@ -40,6 +40,11 @@ The original scripts remain available alongside the workspace server:
   is removed when it is identical to the title. Receipt search matches tags as
   part of the JSON fields. Legacy receipts missing `title` or `date` are backfilled
   on startup (title from description or first attachment name, date to `"todo"`).
+- The quick-create form on the list view shows only `title` and `date` (no
+  description). It sits next to the search form on the same toolbar line: the
+  toolbar gap is 1.5rem, the title flexes to fill the remaining space (min-width
+  0), and the date is fixed at 7rem (border-box). The search form keeps its own
+  size. The detail editor still exposes `description`.
 - REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
 - Keep project documentation general: omit workspace-specific paths, receipt contents, identifiers, and inventories.
 
@@ -62,10 +67,11 @@ The original scripts remain available alongside the workspace server:
 - Always return a clickable receipt detail link when creating a new receipt, including through imports or watcher discovery. Use the connected server's base URL plus `/receipts/<receipt_id>`; include a link for each new receipt even when extraction is pending.
 - `skills/receipty/SKILL.md` is the repo-maintained skill for searching, importing, organizing, and correcting receipts through Receipty MCP tools or the REST API. `skills/receipty/references/api.md` documents REST endpoints and request shapes.
 - The skill covers workspace verification, full-replacement field updates, watcher-created drafts, merge behavior, background extraction, and Apple Photos authorization and attachment modes.
-- On 2026-11-19, the skill was copied to this machine's `~/.hermes/skills/productivity/receipty/` and byte-verified. On 2026-11-27 it was re-copied and byte-verified after adding the title-required/description-optional field rules; the same session then patched the installed copy in place (title+date required, date in list view) via skill_manage rather than a byte-verified copy. The installed files are a separate copy; future repo edits need to be copied to Hermes again.
+- On 2026-11-19, the skill was copied to this machine's `~/.hermes/skills/productivity/receipty/` and byte-verified. On 2026-11-27 it was re-copied and byte-verified after adding the title-required/description-optional field rules; the same session then patched the installed copy in place (title+date required, date in list view) via skill_manage rather than a byte-verified copy. On 2026-11-27 the installed copy was verified byte-identical to the repo (diff and shasum). The installed files are a separate copy; future repo edits need to be copied to Hermes again.
 - Skill structure validation passed with the skill-creator `quick_validate.py` script. Discovery was verified; an end-to-end Hermes receipt workflow was not run.
 
 ## Verification
 
 - 2026-11-19: denied-access guidance, permission request error rendering, and receipt preservation verified; existing receipt, workspace, and managed Photos import tests passed.
 - 2026-11-27: `pytest -q` passed all 12 tests. Coverage includes mandatory title/date enforcement (create, patch, merge), legacy title/date backfill, duplicate description removal, and UI create/list/detail date rendering, plus the existing receipt, workspace, and managed Photos import tests.
+- 2026-11-27: the list-view quick-create form was changed to title+date only (description removed) and laid out on one toolbar line (search form left, title filling the remaining space, fixed 7rem date, 1.5rem toolbar gap). Layout was verified live in a browser (element rects and date-overflow check with a sample date) on a scratch workspace; the 12 tests were re-run after the CSS changes.

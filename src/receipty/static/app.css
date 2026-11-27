@@ -5,7 +5,7 @@ header a { color: white; font-size: 1.4rem; font-weight: 750; text-decoration: n
 header span { opacity: .75; }
 header .nav { margin-left: auto; font-size: 1rem; font-weight: 500; }
 main { width: min(1000px, 90vw); margin: 2rem auto; }
-.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; margin-bottom: 2rem; }
 form { display: flex; gap: .6rem; flex-wrap: wrap; }
 input, select, textarea, button { font: inherit; padding: .55rem .7rem; border: 1px solid #aaa; border-radius: .35rem; }
 button { background: #32694f; color: white; border-color: #32694f; cursor: pointer; }
@@ -25,3 +25,6 @@ pre { white-space: pre-wrap; max-height: 25rem; overflow: auto; }
 
 form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: auto; font-family: inherit; }
 .editor textarea[name="description"] { font-family: inherit; }
+.quick-create { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
+.quick-create input[name="title"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
+.quick-create input[name="date"] { flex: 0 0 7rem; min-width: 0; width: 7rem; box-sizing: border-box; }
