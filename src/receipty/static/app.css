@@ -28,3 +28,7 @@ form textarea[name="description"] { flex: 1 1 16rem; min-width: 16rem; width: au
 .quick-create { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
 .quick-create input[name="title"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
 .quick-create input[name="date"] { flex: 0 0 7rem; min-width: 0; width: 7rem; box-sizing: border-box; }
+.toolbar form { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
+.toolbar form.search input[name="query"] { flex: 1 1 auto; min-width: 0; width: auto; box-sizing: border-box; }
+.toolbar form.search select { flex: 0 0 7rem; }
+.toolbar form.search button, .toolbar form.quick-create button { flex: 0 0 5.5rem; }

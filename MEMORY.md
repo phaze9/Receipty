@@ -41,10 +41,11 @@ The original scripts remain available alongside the workspace server:
   part of the JSON fields. Legacy receipts missing `title` or `date` are backfilled
   on startup (title from description or first attachment name, date to `"todo"`).
 - The quick-create form on the list view shows only `title` and `date` (no
-  description). It sits next to the search form on the same toolbar line: the
-  toolbar gap is 1.5rem, the title flexes to fill the remaining space (min-width
-  0), and the date is fixed at 7rem (border-box). The search form keeps its own
-  size. The detail editor still exposes `description`.
+  description). It sits next to the search form on the same toolbar line: both
+  forms are flex:1 1 0 so the line fills the available width, both main inputs
+  (`query` and `title`) flex to equal width, the state select and date are
+  fixed at 7rem (border-box), and the Search/Create buttons are fixed at 5.5rem.
+  The toolbar gap is 1.5rem. The detail editor still exposes `description`.
 - REST and MCP field updates replace the entire fields object. Fetch the current receipt, merge requested changes, and preserve unrelated fields before submitting an update.
 - Keep project documentation general: omit workspace-specific paths, receipt contents, identifiers, and inventories.
 
@@ -75,3 +76,4 @@ The original scripts remain available alongside the workspace server:
 - 2026-11-19: denied-access guidance, permission request error rendering, and receipt preservation verified; existing receipt, workspace, and managed Photos import tests passed.
 - 2026-11-27: `pytest -q` passed all 12 tests. Coverage includes mandatory title/date enforcement (create, patch, merge), legacy title/date backfill, duplicate description removal, and UI create/list/detail date rendering, plus the existing receipt, workspace, and managed Photos import tests.
 - 2026-11-27: the list-view quick-create form was changed to title+date only (description removed) and laid out on one toolbar line (search form left, title filling the remaining space, fixed 7rem date, 1.5rem toolbar gap). Layout was verified live in a browser (element rects and date-overflow check with a sample date) on a scratch workspace; the 12 tests were re-run after the CSS changes.
+- 2026-11-27: search and title fields in the list-view toolbar were made equal width (both forms flex:1 1 0, both inputs flex:1 1 auto, state select and date fixed at 7rem, Search/Create buttons fixed at 5.5rem, toolbar gap 1.5rem). `pytest -q` passed all 12 tests after the CSS changes.

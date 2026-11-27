@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="toolbar">
-  <form method="get">
+  <form method="get" class="search">
     <input name="query" value="{{ query }}" placeholder="Search receipts and extracted text">
     <select name="state">
       {% for value in ["draft", "active", "archived", ""] %}
