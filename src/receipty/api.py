@@ -13,6 +13,7 @@ from .schemas import (
     ReceiptCreate, ReceiptOut, ReceiptPatch,
 )
 from .service import NotFoundError
+from .receipt_log import log_action
 
 
 def router() -> APIRouter:
@@ -20,6 +21,16 @@ def router() -> APIRouter:
 
     def context(request: Request):
         return request.app.state.context
+
+    def apply_patch(ctx, receipt_id: str, body: ReceiptPatch):
+        try:
+            with session_scope(ctx.sessions) as session:
+                ctx.service.patch(session, receipt_id, body)
+                return ctx.service.get(session, receipt_id)
+        except NotFoundError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @api.get("/workspace")
     def workspace_info(request: Request):
@@ -32,7 +43,10 @@ def router() -> APIRouter:
 
     @api.post("/workspace/rescan")
     def rescan(request: Request):
-        return {"discovered": context(request).watcher.scan()}
+        ctx = context(request)
+        result = {"discovered": ctx.watcher.scan()}
+        log_action(ctx.workspace, "rescan workspace", "receipt-files", channel="API")
+        return result
 
     @api.get("/receipts", response_model=list[ReceiptOut])
     def list_receipts(
@@ -64,9 +78,11 @@ def router() -> APIRouter:
             with session_scope(ctx.sessions) as session:
                 receipt = ctx.service.create(session, body)
                 session.flush()
-                return ctx.service.get(session, receipt.id)
+                created = ctx.service.get(session, receipt.id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "create receipt", created.id, channel="API")
+        return created
 
     @api.get("/receipts/{receipt_id}", response_model=ReceiptOut)
     def get_receipt(request: Request, receipt_id: str):
@@ -80,22 +96,23 @@ def router() -> APIRouter:
     @api.patch("/receipts/{receipt_id}", response_model=ReceiptOut)
     def update_receipt(request: Request, receipt_id: str, body: ReceiptPatch):
         ctx = context(request)
-        try:
-            with session_scope(ctx.sessions) as session:
-                ctx.service.patch(session, receipt_id, body)
-                return ctx.service.get(session, receipt_id)
-        except NotFoundError as exc:
-            raise HTTPException(404, str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(400, str(exc)) from exc
+        result = apply_patch(ctx, receipt_id, body)
+        log_action(ctx.workspace, "update receipt", receipt_id, channel="API")
+        return result
 
     @api.post("/receipts/{receipt_id}/archive", response_model=ReceiptOut)
     def archive_receipt(request: Request, receipt_id: str):
-        return update_receipt(request, receipt_id, ReceiptPatch(state="archived"))
+        ctx = context(request)
+        result = apply_patch(ctx, receipt_id, ReceiptPatch(state="archived"))
+        log_action(ctx.workspace, "archive receipt", receipt_id, channel="API")
+        return result
 
     @api.post("/receipts/{receipt_id}/restore", response_model=ReceiptOut)
     def restore_receipt(request: Request, receipt_id: str):
-        return update_receipt(request, receipt_id, ReceiptPatch(state="draft"))
+        ctx = context(request)
+        result = apply_patch(ctx, receipt_id, ReceiptPatch(state="draft"))
+        log_action(ctx.workspace, "restore receipt", receipt_id, channel="API")
+        return result
 
     @api.post("/receipts/{receipt_id}/purge", status_code=204)
     def purge_receipt(request: Request, receipt_id: str):
@@ -107,26 +124,34 @@ def router() -> APIRouter:
             raise HTTPException(404, str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "purge receipt", receipt_id, channel="API")
 
     @api.post("/receipts/merge", response_model=ReceiptOut)
     def merge_receipts(request: Request, body: MergeRequest):
         ctx = context(request)
         try:
             with session_scope(ctx.sessions) as session:
-                return ctx.service.merge(session, body.source_ids, body.target_id)
+                merged = ctx.service.merge(session, body.source_ids, body.target_id)
+                target_id = merged.id
+                result = ctx.service.get(session, merged.id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "merge receipts", f"sources {len(body.source_ids)}, target {target_id}", channel="API")
+        return result
 
     @api.post("/receipts/{receipt_id}/attachments", response_model=AttachmentOut)
     def attach_file(request: Request, receipt_id: str, body: AttachFile):
         ctx = context(request)
         try:
             with session_scope(ctx.sessions) as session:
-                return ctx.service.attach_file(session, receipt_id, body.path)
+                attachment = ctx.service.attach_file(session, receipt_id, body.path)
+                result = attachment
         except (NotFoundError, FileNotFoundError) as exc:
             raise HTTPException(404, str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "attach file", f"receipt {receipt_id}, path {body.path}", channel="API")
+        return result
 
     @api.get("/attachments/{attachment_id}/content")
     def attachment_content(request: Request, attachment_id: str):
@@ -155,10 +180,12 @@ def router() -> APIRouter:
 
     @api.post("/attachments/{attachment_id}/retry", status_code=202)
     def retry_attachment(request: Request, attachment_id: str):
+        ctx = context(request)
         try:
-            context(request).worker.retry(attachment_id)
+            ctx.worker.retry(attachment_id)
         except LookupError as exc:
             raise HTTPException(404, "Attachment not found") from exc
+        log_action(ctx.workspace, "retry extraction", attachment_id, channel="API")
         return {"status": "queued"}
 
     @api.delete("/attachments/{attachment_id}", status_code=204)
@@ -171,6 +198,7 @@ def router() -> APIRouter:
             for job in session.scalars(select(Job).where(Job.attachment_id == attachment.id)):
                 session.delete(job)
             session.delete(attachment)
+        log_action(ctx.workspace, "detach attachment", attachment_id, channel="API")
 
     @api.get("/photos/authorization")
     def photos_authorization(request: Request):
@@ -178,7 +206,10 @@ def router() -> APIRouter:
 
     @api.post("/photos/authorization")
     def photos_request_authorization(request: Request):
-        return context(request).photos.request_authorization()
+        ctx = context(request)
+        result = ctx.photos.request_authorization()
+        log_action(ctx.workspace, "authorize photos", "", channel="API")
+        return result
 
     @api.get("/photos/albums")
     def photos_albums(request: Request):
@@ -190,14 +221,20 @@ def router() -> APIRouter:
 
     @api.post("/receipts/{receipt_id}/photos/assets", response_model=AttachmentOut)
     def link_photo_asset(request: Request, receipt_id: str, body: PhotoAssetLink):
-        return context(request).photos.link_asset(receipt_id, body.asset_id, body.mode)
+        ctx = context(request)
+        result = ctx.photos.link_asset(receipt_id, body.asset_id, body.mode)
+        log_action(ctx.workspace, "link photo asset", f"receipt {receipt_id}, asset {body.asset_id}", channel="API")
+        return result
 
     @api.post("/receipts/{receipt_id}/photos/albums", response_model=AttachmentOut)
     def link_photo_album(request: Request, receipt_id: str, body: PhotoAlbumLink):
+        ctx = context(request)
         try:
-            return context(request).photos.link_album(receipt_id, body.album_id, body.mode)
+            result = ctx.photos.link_album(receipt_id, body.album_id, body.mode)
         except LookupError as exc:
             raise HTTPException(404, str(exc)) from exc
+        log_action(ctx.workspace, "link photo album", f"receipt {receipt_id}, album {body.album_id}", channel="API")
+        return result
 
     @api.get("/attachments/{attachment_id}/photos/assets")
     def resolve_photo_album(request: Request, attachment_id: str):

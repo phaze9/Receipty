@@ -5,6 +5,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .database import session_scope
+from .receipt_log import log_action
 from .schemas import ReceiptCreate, ReceiptOut, ReceiptPatch
 
 
@@ -27,7 +28,9 @@ def build_mcp(context):
     @mcp.tool()
     def rescan_workspace() -> dict[str, int]:
         """Scan receipt-files recursively and register new supported files."""
-        return {"discovered": context.watcher.scan()}
+        result = {"discovered": context.watcher.scan()}
+        log_action(context.workspace, "rescan workspace", "receipt-files", channel="MCP")
+        return result
 
     @mcp.tool()
     def search_receipts(
@@ -55,9 +58,12 @@ def build_mcp(context):
         """Create a receipt with arbitrary JSON fields."""
         with session_scope(context.sessions) as session:
             receipt = context.service.create(session, ReceiptCreate(fields=fields, state=state))
-            return ReceiptOut.model_validate(
+            result = ReceiptOut.model_validate(
                 context.service.get(session, receipt.id)
             ).model_dump(mode="json")
+            receipt_id = receipt.id
+        log_action(context.workspace, "create receipt", receipt_id, channel="MCP")
+        return result
 
     @mcp.tool()
     def update_receipt(
@@ -68,47 +74,60 @@ def build_mcp(context):
             receipt = context.service.patch(
                 session, receipt_id, ReceiptPatch(fields=fields, state=state)
             )
-            return ReceiptOut.model_validate(receipt).model_dump(mode="json")
+            result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
+        log_action(context.workspace, "update receipt", receipt_id, channel="MCP")
+        return result
 
     @mcp.tool()
     def attach_workspace_file(receipt_id: str, path: str) -> dict[str, Any]:
         """Attach an existing file inside the workspace and enqueue extraction."""
         with session_scope(context.sessions) as session:
             attachment = context.service.attach_file(session, receipt_id, path)
-            return {"id": attachment.id, "path": attachment.path, "status": attachment.status}
+            result = {"id": attachment.id, "path": attachment.path, "status": attachment.status}
+        log_action(context.workspace, "attach file", f"receipt {receipt_id}, path {path}", channel="MCP")
+        return result
 
     @mcp.tool()
     def merge_receipts(source_ids: list[str], target_id: str | None = None) -> dict[str, Any]:
         """Move attachments into one receipt and archive the source receipts."""
         with session_scope(context.sessions) as session:
             receipt = context.service.merge(session, source_ids, target_id)
-            return ReceiptOut.model_validate(receipt).model_dump(mode="json")
+            result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
+            target_id_used = receipt.id
+        log_action(context.workspace, "merge receipts", f"sources {len(source_ids)}, target {target_id_used}", channel="MCP")
+        return result
 
     @mcp.tool()
     def archive_receipt(receipt_id: str) -> dict[str, Any]:
         """Archive a receipt without deleting its files."""
         with session_scope(context.sessions) as session:
             receipt = context.service.patch(session, receipt_id, ReceiptPatch(state="archived"))
-            return ReceiptOut.model_validate(receipt).model_dump(mode="json")
+            result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
+        log_action(context.workspace, "archive receipt", receipt_id, channel="MCP")
+        return result
 
     @mcp.tool()
     def restore_receipt(receipt_id: str) -> dict[str, Any]:
         """Restore an archived receipt to draft state."""
         with session_scope(context.sessions) as session:
             receipt = context.service.patch(session, receipt_id, ReceiptPatch(state="draft"))
-            return ReceiptOut.model_validate(receipt).model_dump(mode="json")
+            result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
+        log_action(context.workspace, "restore receipt", receipt_id, channel="MCP")
+        return result
 
     @mcp.tool()
     def purge_receipt(receipt_id: str) -> dict[str, Any]:
         """Permanently delete a deleted receipt (after the retention period)."""
         with session_scope(context.sessions) as session:
             context.service.purge(session, receipt_id)
-            return {"purged": receipt_id}
+        log_action(context.workspace, "purge receipt", receipt_id, channel="MCP")
+        return {"purged": receipt_id}
 
     @mcp.tool()
     def retry_extraction(attachment_id: str) -> dict[str, str]:
         """Queue attachment text extraction again."""
         context.worker.retry(attachment_id)
+        log_action(context.workspace, "retry extraction", attachment_id, channel="MCP")
         return {"status": "queued"}
 
     @mcp.tool()
@@ -127,6 +146,7 @@ def build_mcp(context):
     ) -> dict[str, Any]:
         """Link or import an Apple Photos asset into a receipt."""
         attachment = context.photos.link_asset(receipt_id, asset_id, mode)
+        log_action(context.workspace, "link photo asset", f"receipt {receipt_id}, asset {asset_id}", channel="MCP")
         return {"id": attachment.id, "kind": attachment.kind, "path": attachment.path}
 
     @mcp.tool()
@@ -135,6 +155,7 @@ def build_mcp(context):
     ) -> dict[str, Any]:
         """Attach an Apple Photos album dynamically or as an asset-ID snapshot."""
         attachment = context.photos.link_album(receipt_id, album_id, mode)
+        log_action(context.workspace, "link photo album", f"receipt {receipt_id}, album {album_id}", channel="MCP")
         return {"id": attachment.id, "kind": attachment.kind, "mode": mode}
 
     return mcp

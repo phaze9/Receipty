@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from .service import DELETE_RETENTION_DAYS
 from .database import session_scope
+from .receipt_log import log_action
 from .photos import PhotosUnavailable
 from .schemas import ReceiptCreate, ReceiptPatch
 
@@ -68,6 +69,7 @@ def router() -> APIRouter:
                 receipt_id = receipt.id
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "create receipt", receipt_id)
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.get("/receipts/{receipt_id}", response_class=HTMLResponse)
@@ -118,6 +120,7 @@ def router() -> APIRouter:
                 ctx.service.patch(session, receipt_id, ReceiptPatch(fields=fields, state=state))
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "update receipt", receipt_id)
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.post("/receipts/{receipt_id}/purge")
@@ -128,6 +131,7 @@ def router() -> APIRouter:
                 ctx.service.purge(session, receipt_id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
+        log_action(ctx.workspace, "purge receipt", receipt_id)
         return RedirectResponse("/", status_code=303)
 
     @ui.get("/photos", response_class=HTMLResponse)
@@ -159,6 +163,7 @@ def router() -> APIRouter:
             request.app.state.context.photos.request_authorization()
         except PhotosUnavailable as exc:
             return render_photos(request, receipt_id or None, error=str(exc))
+        log_action(request.app.state.context.workspace, "authorize photos", receipt_id)
         target = "/photos"
         if receipt_id:
             target += "?" + urlencode({"receipt_id": receipt_id})
@@ -169,6 +174,7 @@ def router() -> APIRouter:
         request: Request, receipt_id: str, asset_id: str = Form(...), mode: str = Form("managed_copy")
     ):
         request.app.state.context.photos.link_asset(receipt_id, asset_id, mode)
+        log_action(request.app.state.context.workspace, "attach photo asset", f"receipt {receipt_id}, asset {asset_id}")
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.post("/receipts/{receipt_id}/photos/albums")
@@ -176,6 +182,7 @@ def router() -> APIRouter:
         request: Request, receipt_id: str, album_id: str = Form(...), mode: str = Form("dynamic")
     ):
         request.app.state.context.photos.link_album(receipt_id, album_id, mode)
+        log_action(request.app.state.context.workspace, "attach photo album", f"receipt {receipt_id}, album {album_id}")
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     return ui
