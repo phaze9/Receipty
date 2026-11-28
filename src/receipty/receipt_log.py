@@ -9,6 +9,12 @@ a single background worker thread processes jobs one at a time (strictly
 sequential, one receipt at a time) and writes LOG.md. Status updates are
 printed to stdout.
 
+Pending jobs are persisted to `.receipty/pending-log.json` before enqueueing,
+so a server restart does not lose entries: on startup the pending file is
+replayed and each queued entry is written. A job is removed from the file
+once its entry has been written; a job whose write fails is kept for the next
+startup.
+
 Configuration (env vars; logging is off by default — set RECEIPTY_LOG to
 1/true/on/yes to enable; logging is skipped entirely when either of the two
 required values is unset):
@@ -27,6 +33,7 @@ import queue
 import re
 import threading
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -191,7 +198,52 @@ def _write_entry(workspace, timestamp: str, message: str, link: str | None) -> b
         return False
 
 
-# ---- Async worker -----------------------------------------------------------
+# ---- Pending-job persistence ----------------------------------------------------
+
+_PENDING_LOCK = threading.Lock()
+
+
+def _pending_path(workspace) -> Path:
+    return workspace.metadata / "pending-log.json"
+
+
+def _load_pending(workspace) -> list:
+    try:
+        data = json.loads(_pending_path(workspace).read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return [j for j in data if isinstance(j, dict) and j.get("id")]
+    except Exception:
+        pass
+    return []
+
+
+def _save_pending(workspace, jobs: list) -> None:
+    path = _pending_path(workspace)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(json.dumps(jobs, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(path)
+    except OSError:
+        logger.exception("Could not write pending log queue to %s", path)
+
+
+def _append_pending(workspace, job: dict) -> None:
+    with _PENDING_LOCK:
+        jobs = _load_pending(workspace)
+        jobs.append(job)
+        _save_pending(workspace, jobs)
+
+
+def _remove_pending(workspace, job_id: str) -> None:
+    with _PENDING_LOCK:
+        jobs = _load_pending(workspace)
+        kept = [j for j in jobs if j.get("id") != job_id]
+        if len(kept) != len(jobs):
+            _save_pending(workspace, kept)
+
+
+# ---- Async worker ---------------------------------------------------------------
 
 _QUEUE: queue.Queue = queue.Queue()
 _STATE_LOCK = threading.Lock()
@@ -210,11 +262,19 @@ def _ensure_worker() -> None:
     thread.start()
 
 
+def _enqueue(workspace, job: dict) -> None:
+    _ensure_worker()
+    with _IDLE:
+        global _PENDING
+        _PENDING += 1
+        _QUEUE.put((workspace, job))
+
+
 def _worker_loop() -> None:
     while True:
-        job = _QUEUE.get()
+        workspace, job = _QUEUE.get()
         try:
-            _process(job)
+            _process(workspace, job)
         except Exception:
             logger.exception("Action log worker failed")
         finally:
@@ -226,8 +286,12 @@ def _worker_loop() -> None:
                     _IDLE.notify_all()
 
 
-def _process(job: tuple) -> None:
-    workspace, action, detail, channel, link, timestamp = job
+def _process(workspace, job: dict) -> None:
+    action = job.get("action", "")
+    detail = job.get("detail", "")
+    channel = job.get("channel", "UI")
+    link = job.get("link")
+    timestamp = job.get("timestamp") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[receipt-log] generating message: {action} ({channel})", flush=True)
     try:
         message = generate_message(action, detail, channel)
@@ -240,6 +304,7 @@ def _process(job: tuple) -> None:
     ok = _write_entry(workspace, timestamp, message, link)
     if ok:
         print("[receipt-log] wrote entry to LOG.md", flush=True)
+        _remove_pending(workspace, job["id"])
     else:
         print("[receipt-log] failed to write entry to LOG.md", flush=True)
 
@@ -256,14 +321,44 @@ def log_action(workspace, action: str, detail: str = "", channel: str = "UI", li
     if not _configured():
         return False
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    job = (workspace, action, detail, channel, link, timestamp)
-    _ensure_worker()
-    with _IDLE:
-        global _PENDING
-        _PENDING += 1
-        _QUEUE.put(job)
+    job = {
+        "id": uuid.uuid4().hex,
+        "action": action,
+        "detail": detail,
+        "channel": channel,
+        "link": link,
+        "timestamp": timestamp,
+    }
+    try:
+        _append_pending(workspace, job)
+    except Exception:
+        logger.exception("Could not persist pending log job")
+    _enqueue(workspace, job)
     print(f"[receipt-log] queued: {action} ({channel})", flush=True)
     return True
+
+
+def replay_pending(workspace) -> int:
+    """Enqueue any log jobs persisted before a restart (missing LOG.md entries).
+
+    Returns the number of replayed jobs. Never raises; logging must not fail
+    server startup.
+    """
+    if not _enabled():
+        return 0
+    if not _configured():
+        return 0
+    try:
+        jobs = _load_pending(workspace)
+    except Exception:
+        logger.exception("Could not load pending log jobs")
+        return 0
+    if not jobs:
+        return 0
+    for job in jobs:
+        _enqueue(workspace, job)
+    print(f"[receipt-log] replayed {len(jobs)} pending entries", flush=True)
+    return len(jobs)
 
 
 def wait_for_idle(timeout: float = 10.0) -> bool:

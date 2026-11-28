@@ -99,6 +99,12 @@ sequentially, and writes `LOG.md`. Status updates are printed to stdout
 (`[receipt-log] queued`, `[receipt-log] generating message`, `[receipt-log]
 message`, `[receipt-log] wrote entry to LOG.md`).
 
+Pending entries are persisted to `.receipty/pending-log.json` before they are
+queued, so a restart does not lose them: on startup the server replays the file
+and writes any missing entries (`[receipt-log] replayed N pending entries`).
+A job is removed from the file once its entry has been written; a job whose
+write fails is kept for the next startup.
+
 Configuration via environment variables (logging is skipped entirely when the
 two required values are unset):
 

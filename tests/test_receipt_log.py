@@ -267,3 +267,60 @@ def test_mcp_log_line_includes_receipt_link(tmp_path: Path, monkeypatch):
     receipt_log.wait_for_idle()
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert f"/receipts/{receipt_id}" in log
+
+
+def test_startup_replays_pending_jobs(tmp_path: Path, monkeypatch):
+    import json
+
+    monkeypatch.setenv("RECEIPTY_LOG", "1")
+    monkeypatch.setattr(
+        receipt_log, "generate_message",
+        lambda action, detail, channel="UI": "Replayed message",
+    )
+    ws = tmp_path / "workspace"
+    meta = ws / ".receipty"
+    meta.mkdir(parents=True)
+    job = {
+        "id": "test-job-1",
+        "action": "create receipt",
+        "detail": "x: 1",
+        "channel": "MCP",
+        "link": "/receipts/abc",
+        "timestamp": "2026-11-28 10:00:00",
+    }
+    (meta / "pending-log.json").write_text(json.dumps([job]), encoding="utf-8")
+    app = create_app(ws, start_background=False)
+    with TestClient(app):
+        receipt_log.wait_for_idle()
+    log = (ws / "LOG.md").read_text(encoding="utf-8")
+    assert "Replayed message" in log
+    assert "2026-11-28 10:00:00" in log
+    assert json.loads((meta / "pending-log.json").read_text(encoding="utf-8")) == []
+
+
+def test_startup_replay_keeps_failed_jobs(tmp_path: Path, monkeypatch):
+    import json
+
+    monkeypatch.setenv("RECEIPTY_LOG", "1")
+    monkeypatch.setattr(
+        receipt_log, "generate_message",
+        lambda action, detail, channel="UI": "Replayed message",
+    )
+    monkeypatch.setattr(receipt_log, "_write_entry", lambda *a, **k: False)
+    ws = tmp_path / "workspace"
+    meta = ws / ".receipty"
+    meta.mkdir(parents=True)
+    job = {
+        "id": "test-job-2",
+        "action": "create receipt",
+        "detail": "x: 1",
+        "channel": "API",
+        "link": None,
+        "timestamp": "2026-11-28 10:00:00",
+    }
+    (meta / "pending-log.json").write_text(json.dumps([job]), encoding="utf-8")
+    app = create_app(ws, start_background=False)
+    with TestClient(app):
+        receipt_log.wait_for_idle()
+    remaining = json.loads((meta / "pending-log.json").read_text(encoding="utf-8"))
+    assert [j["id"] for j in remaining] == ["test-job-2"]

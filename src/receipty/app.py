@@ -14,6 +14,7 @@ from .database import create_database, session_scope
 from .jobs import JobWorker
 from .mcp_server import build_mcp
 from .photos import PhotosBridge
+from .receipt_log import replay_pending
 from .service import ReceiptService
 from .ui import router as ui_router
 from .watcher import ReceiptWatcher
@@ -57,6 +58,7 @@ def create_app(workspace_path: str | Path, *, start_background: bool = True) -> 
             async with mcp.session_manager.run():
                 with session_scope(sessions) as session:
                     service.backfill_required_fields(session)
+                replay_pending(workspace)
                 if start_background:
                     tasks = [
                         asyncio.create_task(watcher.run()),
