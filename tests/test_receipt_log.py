@@ -196,3 +196,27 @@ def test_default_disabled_when_unset(tmp_path: Path, monkeypatch):
         assert response.status_code == 303
     assert called == []
     assert not (tmp_path / "workspace" / "LOG.md").exists()
+
+
+def test_field_values_logged_but_secrets_redacted(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("RECEIPTY_LOG", "1")
+    details = []
+
+    def fake(action, detail, channel="API"):
+        details.append(detail)
+        return "message"
+
+    monkeypatch.setattr(receipt_log, "generate_message", fake)
+    app = create_app(tmp_path / "workspace", start_background=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/receipts",
+            json={"fields": {"title": "Cafe", "date": "todo", "bank_token": "secret-value", "note": "hello"}},
+        )
+        assert response.status_code == 201
+    assert details
+    detail = details[0]
+    assert "Cafe" in detail
+    assert "hello" in detail
+    assert "secret-value" not in detail
+    assert "bank_token: [redacted]" in detail

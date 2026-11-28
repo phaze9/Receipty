@@ -98,8 +98,10 @@ two required values are unset):
 If the LLM is unreachable, the action is still logged with a deterministic
 fallback message marked `(LLM unavailable)`. Logging never fails the action —
 generation is bounded (30 s) and any failure falls back to the deterministic
-message. Each entry records only the action type and IDs — details are
-truncated to 200 characters and field values are never logged. `LOG.md` is
+message. Each entry records the action type, IDs, and (on create/update) the
+non-secret field values — details are truncated to 200 characters. Fields whose
+names look secret (e.g. `password`, `token`, `api_key`, `card`) are redacted to
+`[redacted]` before anything is logged or sent to the LLM. `LOG.md` is
 gitignored and lives in the workspace, not the repo.
 
 ## Apple Photos

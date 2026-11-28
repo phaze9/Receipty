@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from .service import DELETE_RETENTION_DAYS
 from .database import session_scope
-from .receipt_log import log_action
+from .receipt_log import format_fields, log_action
 from .photos import PhotosUnavailable
 from .schemas import ReceiptCreate, ReceiptPatch
 
@@ -67,9 +67,10 @@ def router() -> APIRouter:
             with session_scope(ctx.sessions) as session:
                 receipt = ctx.service.create(session, ReceiptCreate(fields=fields))
                 receipt_id = receipt.id
+                stored_fields = dict(receipt.fields)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "create receipt", receipt_id)
+        log_action(ctx.workspace, "create receipt", f"{receipt_id}: {format_fields(stored_fields)}")
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.get("/receipts/{receipt_id}", response_class=HTMLResponse)
@@ -117,10 +118,11 @@ def router() -> APIRouter:
         ctx = request.app.state.context
         try:
             with session_scope(ctx.sessions) as session:
-                ctx.service.patch(session, receipt_id, ReceiptPatch(fields=fields, state=state))
+                patched = ctx.service.patch(session, receipt_id, ReceiptPatch(fields=fields, state=state))
+                stored_fields = dict(patched.fields)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "update receipt", receipt_id)
+        log_action(ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(stored_fields)}")
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.post("/receipts/{receipt_id}/purge")

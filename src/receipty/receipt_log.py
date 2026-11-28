@@ -15,8 +15,10 @@ required values is unset):
 from __future__ import annotations
 
 import importlib.util
+import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -24,6 +26,39 @@ logger = logging.getLogger(__name__)
 
 GENERATE_TIMEOUT = 30.0
 MAX_DETAIL_CHARS = 200
+
+SECRET_NAME_PATTERN = re.compile(
+    r"(secret|password|passwd|token|credential|api[_-]?key|private[_-]?key|card|cvv|pin|ssn|auth)",
+    re.IGNORECASE,
+)
+
+
+def is_secret_field(name) -> bool:
+    return bool(SECRET_NAME_PATTERN.search(str(name)))
+
+
+def format_fields(fields: dict | None, max_chars: int = MAX_DETAIL_CHARS) -> str:
+    """Format non-secret field values for the log. Secret fields are redacted."""
+    if not fields:
+        return ""
+    parts = []
+    for key, value in fields.items():
+        if is_secret_field(key):
+            parts.append(f"{key}: [redacted]")
+            continue
+        if isinstance(value, str):
+            rendered = value
+        else:
+            try:
+                rendered = json.dumps(value, ensure_ascii=False, default=str)
+            except Exception:
+                rendered = str(value)
+        rendered = rendered.strip().replace("\n", " ")
+        parts.append(f'{key}: "{rendered}"')
+    text = ", ".join(parts)
+    if len(text) > max_chars:
+        text = text[:max_chars] + "…"
+    return text
 
 LOG_HEADER = """# Action log
 

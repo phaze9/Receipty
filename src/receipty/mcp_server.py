@@ -5,7 +5,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from .database import session_scope
-from .receipt_log import log_action
+from .receipt_log import format_fields, log_action
 from .schemas import ReceiptCreate, ReceiptOut, ReceiptPatch
 
 
@@ -62,7 +62,7 @@ def build_mcp(context):
                 context.service.get(session, receipt.id)
             ).model_dump(mode="json")
             receipt_id = receipt.id
-        log_action(context.workspace, "create receipt", receipt_id, channel="MCP")
+        log_action(context.workspace, "create receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP")
         return result
 
     @mcp.tool()
@@ -75,7 +75,7 @@ def build_mcp(context):
                 session, receipt_id, ReceiptPatch(fields=fields, state=state)
             )
             result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
-        log_action(context.workspace, "update receipt", receipt_id, channel="MCP")
+        log_action(context.workspace, "update receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP")
         return result
 
     @mcp.tool()

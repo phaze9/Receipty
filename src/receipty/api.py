@@ -13,7 +13,7 @@ from .schemas import (
     ReceiptCreate, ReceiptOut, ReceiptPatch,
 )
 from .service import NotFoundError
-from .receipt_log import log_action
+from .receipt_log import format_fields, log_action
 
 
 def router() -> APIRouter:
@@ -81,7 +81,7 @@ def router() -> APIRouter:
                 created = ctx.service.get(session, receipt.id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "create receipt", created.id, channel="API")
+        log_action(ctx.workspace, "create receipt", f"{created.id}: {format_fields(created.fields)}", channel="API")
         return created
 
     @api.get("/receipts/{receipt_id}", response_model=ReceiptOut)
@@ -97,7 +97,7 @@ def router() -> APIRouter:
     def update_receipt(request: Request, receipt_id: str, body: ReceiptPatch):
         ctx = context(request)
         result = apply_patch(ctx, receipt_id, body)
-        log_action(ctx.workspace, "update receipt", receipt_id, channel="API")
+        log_action(ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(result.fields)}", channel="API")
         return result
 
     @api.post("/receipts/{receipt_id}/archive", response_model=ReceiptOut)
