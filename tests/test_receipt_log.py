@@ -155,7 +155,7 @@ def test_unconfigured_skips_logging(tmp_path: Path, monkeypatch):
     assert not (tmp_path / "workspace" / "LOG.md").exists()
 
 
-def test_log_file_is_append_only(tmp_path: Path, monkeypatch):
+def test_newest_entry_on_top(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("RECEIPTY_LOG", "1")
     counter = {"n": 0}
 
@@ -173,8 +173,7 @@ def test_log_file_is_append_only(tmp_path: Path, monkeypatch):
                 follow_redirects=False,
             )
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
-    assert "message 1" in log
-    assert "message 2" in log
+    assert log.index("message 2") < log.index("message 1")
 
 
 def test_default_disabled_when_unset(tmp_path: Path, monkeypatch):
