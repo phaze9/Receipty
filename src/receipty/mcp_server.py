@@ -37,11 +37,13 @@ def build_mcp(context):
         query: str | None = None, state: str | None = None,
         field_filters: dict[str, Any] | None = None, offset: int = 0, limit: int = 50
     ) -> list[dict[str, Any]]:
-        """List or full-text search receipts and extracted attachment content."""
+        """List or full-text search receipts and extracted attachment content.
+
+        Deleted receipts are excluded unless state="deleted" is given."""
         with session_scope(context.sessions) as session:
             receipts = context.service.list(
                 session, query=query, state=state, field_filters=field_filters,
-                offset=offset, limit=min(limit, 200)
+                offset=offset, limit=min(limit, 200), exclude_deleted=not state
             )
             return [ReceiptOut.model_validate(receipt).model_dump(mode="json") for receipt in receipts]
 

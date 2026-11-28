@@ -36,7 +36,7 @@ def router() -> APIRouter:
         if sort and not direction:
             direction = "desc" if sort == "date" else "asc"
         with session_scope(ctx.sessions) as session:
-            receipts = ctx.service.list(session, query=query, state=state or None, sort=sort, direction=direction or "asc")
+            receipts = ctx.service.list(session, query=query, state=state or None, sort=sort, direction=direction or "asc", exclude_deleted=not state)
             params = {"state": state}
             if query:
                 params["query"] = query

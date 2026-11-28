@@ -210,3 +210,28 @@ def test_deleted_receipt_detail_view_shows_purge_button(tmp_path: Path):
 
         # List view shows the deleted state filter.
         assert "deleted" in client.get("/", params={"state": "deleted"}).text
+
+
+def test_api_list_hides_deleted_unless_requested(tmp_path: Path):
+    from receipty.app import create_app
+    from fastapi.testclient import TestClient
+
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/receipts",
+            json={"fields": {"title": "Deleted One", "date": "2026-11-27"}},
+        )
+        receipt_id = created.json()["id"]
+        assert client.patch(f"/api/v1/receipts/{receipt_id}", json={"state": "deleted"}).status_code == 200
+        client.post("/api/v1/receipts", json={"fields": {"title": "Visible One", "date": "2026-11-27"}})
+
+        default = client.get("/api/v1/receipts").json()
+        titles = [item["fields"]["title"] for item in default]
+        assert "Deleted One" not in titles
+        assert "Visible One" in titles
+
+        deleted = client.get("/api/v1/receipts", params={"state": "deleted"}).json()
+        titles = [item["fields"]["title"] for item in deleted]
+        assert titles == ["Deleted One"]

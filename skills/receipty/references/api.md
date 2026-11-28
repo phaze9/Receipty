@@ -29,7 +29,8 @@ interpreting a response as a result. The server accepts loopback connections.
 REST exposes one field filter per request; MCP accepts a `field_filters` object.
 Query results are ordered by most recently updated receipt. Detaching a file in
 the watched tree can allow a later scan to register it as a new draft; detachment
-is not an exclusion mechanism.
+is not an exclusion mechanism. Deleted receipts are excluded from list/search
+unless the `deleted` state is requested explicitly.
 
 `title` and `date` are required on create and on field updates (requests without
 them return 400). `date` is a free-form string; use `"todo"` when the date is

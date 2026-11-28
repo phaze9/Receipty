@@ -104,7 +104,7 @@ class ReceiptService:
     def list(
         self, session: Session, *, query: str | None = None, state: str | None = None,
         field_filters: dict[str, Any] | None = None, offset: int = 0, limit: int = 50,
-        sort: str | None = None, direction: str = "asc",
+        sort: str | None = None, direction: str = "asc", exclude_deleted: bool = False,
     ) -> list[Receipt]:
         if sort is not None and sort not in ("date", "title"):
             raise ValueError("sort must be 'date' or 'title'")
@@ -127,6 +127,8 @@ class ReceiptService:
             statement = statement.order_by(Receipt.updated_at.desc())
         if state:
             statement = statement.where(Receipt.state == state)
+        elif exclude_deleted:
+            statement = statement.where(Receipt.state != "deleted")
         for key, value in (field_filters or {}).items():
             statement = statement.where(Receipt.fields[key].as_string() == str(value))
         if query:

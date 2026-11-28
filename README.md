@@ -37,7 +37,9 @@ stamps it with `deleted_at`; it stays in that state for 30 days. After that
 window, it can be purged permanently via `POST /api/v1/receipts/{id}/purge`
 (or the MCP `purge_receipt` tool) or the Purge button on the detail view.
 Purging deletes the database record and its attachments/jobs, not the files
-on disk. Deleted receipts cannot be edited or restored.
+on disk. Deleted receipts cannot be edited or restored. Deleted receipts are
+excluded from list/search views (UI, REST `GET /api/v1/receipts` and the MCP
+`search_receipts` tool) unless the `deleted` state is requested explicitly.
 
 ## Development
 

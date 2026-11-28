@@ -30,7 +30,8 @@ only when it cannot be determined from the request or existing connection.
   inspect candidates with `get_receipt(receipt_id)`. Search matches JSON fields
   and extracted attachment text using SQL LIKE. Paginate with a stable collection
   before claiming complete results; the default page is 50, maximum 200.
-  Without a state filter, archived receipts are included.
+  Without a state filter, archived receipts are included; deleted receipts are
+  excluded (pass `state="deleted"` to list only deleted receipts).
 - Create with `create_receipt(fields, state="draft")`. Fields are arbitrary JSON;
   follow existing field names and value types in the collection. Creation accepts
   `draft` or `active`; updates additionally accept `archived` or `deleted`.

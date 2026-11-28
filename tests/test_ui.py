@@ -87,3 +87,24 @@ def test_ui_list_shows_description(tmp_path: Path):
         assert response.status_code == 303
         page = client.get("/")
         assert "Morning latte" in page.text
+
+
+def test_all_view_hides_deleted_receipts(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    app = create_app(workspace, start_background=False)
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/receipts",
+            json={"fields": {"title": "Deleted One", "date": "2026-11-27"}},
+        )
+        receipt_id = created.json()["id"]
+        assert client.patch(f"/api/v1/receipts/{receipt_id}", json={"state": "deleted"}).status_code == 200
+        client.post("/api/v1/receipts", json={"fields": {"title": "Visible One", "date": "2026-11-27"}})
+
+        page = client.get("/", params={"state": ""})
+        assert "Deleted One" not in page.text
+        assert "Visible One" in page.text
+
+        page = client.get("/", params={"state": "deleted"})
+        assert "Deleted One" in page.text
+        assert "Visible One" not in page.text

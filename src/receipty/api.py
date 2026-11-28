@@ -67,6 +67,7 @@ def router() -> APIRouter:
                     session, query=query, state=state,
                     field_filters={field_key: field_value} if field_key and field_value is not None else None,
                     offset=offset, limit=limit, sort=sort, direction=direction,
+                    exclude_deleted=not state,
                 )
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
