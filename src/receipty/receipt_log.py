@@ -10,7 +10,7 @@ required values is unset):
   RECEIPTY_LOG           Enable logging (default off).
   RECEIPTY_LLM_URL       Chat-completions endpoint (required).
   RECEIPTY_MODEL_CONNECT Path to model_connect.py (required).
-  MODEL_CONNECT_API_KEY  Bearer key (falls back to OMLX_BBY_API_KEY).
+  MODEL_CONNECT_API_KEY  Bearer key (falls back to OMLX_API_KEY).
 """
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ def _load_model_connect():
 
 
 def _api_key() -> str:
-    return os.environ.get("MODEL_CONNECT_API_KEY") or os.environ.get("OMLX_BBY_API_KEY") or ""
+    return os.environ.get("MODEL_CONNECT_API_KEY") or os.environ.get("OMLX_API_KEY") or ""
 
 
 def _truncate(detail: str) -> str:

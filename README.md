@@ -93,7 +93,7 @@ two required values are unset):
 - `RECEIPTY_LOG=1` — enable action logging (off by default).
 - `RECEIPTY_LLM_URL` — chat-completions endpoint (required).
 - `RECEIPTY_MODEL_CONNECT` — path to `model_connect.py` (required).
-- `MODEL_CONNECT_API_KEY` — Bearer key (falls back to `OMLX_BBY_API_KEY`).
+- `MODEL_CONNECT_API_KEY` — Bearer key (falls back to `OMLX_API_KEY`).
 
 If the LLM is unreachable, the action is still logged with a deterministic
 fallback message marked `(LLM unavailable)`. Logging never fails the action —

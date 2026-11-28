@@ -123,7 +123,7 @@ append to LOG.md — the server does it. Logging is off by default; enable with
 skipped entirely unless the server is started with `RECEIPTY_LLM_URL` (chat-
 completions endpoint) and `RECEIPTY_MODEL_CONNECT` (path to `model_connect.py`)
 set; the Bearer key comes from `MODEL_CONNECT_API_KEY` (falling back to
-`OMLX_BBY_API_KEY`).
+`OMLX_API_KEY`).
 
 Read changed receipts back through the service. Report receipt IDs, the concrete
 changes, and any pending or failed extraction. Preserve unrelated workspace
