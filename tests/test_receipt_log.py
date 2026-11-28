@@ -32,6 +32,7 @@ def test_ui_create_logs_entry(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert "A receipt was created in the UI" in log
     assert "—" in log
@@ -52,6 +53,7 @@ def test_llm_failure_falls_back(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert "UI action: create receipt" in log
     assert "LLM unavailable" in log
@@ -74,6 +76,7 @@ def test_disabled_by_env(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
     assert called == []
     assert not (tmp_path / "workspace" / "LOG.md").exists()
 
@@ -91,6 +94,7 @@ def test_api_calls_logged(tmp_path: Path, monkeypatch):
     with TestClient(app) as client:
         response = client.post("/api/v1/receipts", json={"fields": {"title": "Cafe", "date": "todo"}})
         assert response.status_code == 201
+        receipt_log.wait_for_idle()
     assert called == [("create receipt", "API")]
     assert "message" in (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
 
@@ -111,6 +115,7 @@ def test_mcp_calls_logged(tmp_path: Path, monkeypatch):
         {"title": "Cafe", "date": "todo"}, "draft"
     )
     assert result["fields"]["title"] == "Cafe"
+    receipt_log.wait_for_idle()
     assert called == [("create receipt", "MCP")]
     assert "message" in (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
 
@@ -128,6 +133,7 @@ def test_reads_not_logged(tmp_path: Path, monkeypatch):
     with TestClient(app) as client:
         response = client.get("/api/v1/receipts")
         assert response.status_code == 200
+        receipt_log.wait_for_idle()
     assert called == []
     assert not (tmp_path / "workspace" / "LOG.md").exists()
 
@@ -151,6 +157,7 @@ def test_unconfigured_skips_logging(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
     assert called == []
     assert not (tmp_path / "workspace" / "LOG.md").exists()
 
@@ -172,6 +179,7 @@ def test_newest_entry_on_top(tmp_path: Path, monkeypatch):
                 data={"title": "Cafe", "date": "todo", "description": ""},
                 follow_redirects=False,
             )
+        receipt_log.wait_for_idle()
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert log.index("message 2") < log.index("message 1")
 
@@ -193,6 +201,7 @@ def test_default_disabled_when_unset(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
     assert called == []
     assert not (tmp_path / "workspace" / "LOG.md").exists()
 
@@ -213,6 +222,7 @@ def test_field_values_logged_but_secrets_redacted(tmp_path: Path, monkeypatch):
             json={"fields": {"title": "Cafe", "date": "todo", "bank_token": "secret-value", "note": "hello"}},
         )
         assert response.status_code == 201
+        receipt_log.wait_for_idle()
     assert details
     detail = details[0]
     assert "Cafe" in detail
@@ -235,6 +245,7 @@ def test_ui_log_line_includes_receipt_link(tmp_path: Path, monkeypatch):
             follow_redirects=False,
         )
         assert response.status_code == 303
+        receipt_log.wait_for_idle()
         location = response.headers["location"]
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert f"http://testserver{location}" in log
@@ -253,5 +264,6 @@ def test_mcp_log_line_includes_receipt_link(tmp_path: Path, monkeypatch):
         {"title": "Cafe", "date": "todo"}, "draft"
     )
     receipt_id = result["id"]
+    receipt_log.wait_for_idle()
     log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
     assert f"/receipts/{receipt_id}" in log

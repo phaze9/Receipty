@@ -93,6 +93,12 @@ deterministic ` — <link>` (full URL in the UI/API, relative `/receipts/<id>` i
 MCP) after the message — it is templated in after generation, never LLM-produced.
 Reads (list, get, search) are not logged.
 
+Logging is asynchronous: the action returns immediately while a single
+background worker thread processes one receipt at a time, strictly
+sequentially, and writes `LOG.md`. Status updates are printed to stdout
+(`[receipt-log] queued`, `[receipt-log] generating message`, `[receipt-log]
+message`, `[receipt-log] wrote entry to LOG.md`).
+
 Configuration via environment variables (logging is skipped entirely when the
 two required values are unset):
 
@@ -103,7 +109,7 @@ two required values are unset):
 
 If the LLM is unreachable, the action is still logged with a deterministic
 fallback message marked `(LLM unavailable)`. Logging never fails the action —
-generation is bounded (30 s) and any failure falls back to the deterministic
+generation is bounded (5 minutes) and any failure falls back to the deterministic
 message. Each entry records the action type, IDs, and (on create/update) the
 non-secret field values — details are truncated to 200 characters. Fields whose
 names look secret (e.g. `password`, `token`, `api_key`, `card`) are redacted to
