@@ -70,7 +70,10 @@ def router() -> APIRouter:
                 stored_fields = dict(receipt.fields)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "create receipt", f"{receipt_id}: {format_fields(stored_fields)}")
+        log_action(
+            ctx.workspace, "create receipt", f"{receipt_id}: {format_fields(stored_fields)}",
+            link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}",
+        )
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.get("/receipts/{receipt_id}", response_class=HTMLResponse)
@@ -122,7 +125,10 @@ def router() -> APIRouter:
                 stored_fields = dict(patched.fields)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(stored_fields)}")
+        log_action(
+            ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(stored_fields)}",
+            link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}",
+        )
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.post("/receipts/{receipt_id}/purge")
@@ -133,7 +139,10 @@ def router() -> APIRouter:
                 ctx.service.purge(session, receipt_id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "purge receipt", receipt_id)
+        log_action(
+            ctx.workspace, "purge receipt", receipt_id,
+            link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}",
+        )
         return RedirectResponse("/", status_code=303)
 
     @ui.get("/photos", response_class=HTMLResponse)
@@ -176,7 +185,10 @@ def router() -> APIRouter:
         request: Request, receipt_id: str, asset_id: str = Form(...), mode: str = Form("managed_copy")
     ):
         request.app.state.context.photos.link_asset(receipt_id, asset_id, mode)
-        log_action(request.app.state.context.workspace, "attach photo asset", f"receipt {receipt_id}, asset {asset_id}")
+        log_action(
+            request.app.state.context.workspace, "attach photo asset", f"receipt {receipt_id}, asset {asset_id}",
+            link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}",
+        )
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     @ui.post("/receipts/{receipt_id}/photos/albums")
@@ -184,7 +196,10 @@ def router() -> APIRouter:
         request: Request, receipt_id: str, album_id: str = Form(...), mode: str = Form("dynamic")
     ):
         request.app.state.context.photos.link_album(receipt_id, album_id, mode)
-        log_action(request.app.state.context.workspace, "attach photo album", f"receipt {receipt_id}, album {album_id}")
+        log_action(
+            request.app.state.context.workspace, "attach photo album", f"receipt {receipt_id}, album {album_id}",
+            link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}",
+        )
         return RedirectResponse(f"/receipts/{receipt_id}", status_code=303)
 
     return ui

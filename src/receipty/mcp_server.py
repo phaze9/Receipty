@@ -62,7 +62,8 @@ def build_mcp(context):
                 context.service.get(session, receipt.id)
             ).model_dump(mode="json")
             receipt_id = receipt.id
-        log_action(context.workspace, "create receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP")
+        log_action(context.workspace, "create receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP",
+                  link=f"/receipts/{receipt_id}")
         return result
 
     @mcp.tool()
@@ -75,7 +76,8 @@ def build_mcp(context):
                 session, receipt_id, ReceiptPatch(fields=fields, state=state)
             )
             result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
-        log_action(context.workspace, "update receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP")
+        log_action(context.workspace, "update receipt", f"{receipt_id}: {format_fields(result['fields'])}", channel="MCP",
+                  link=f"/receipts/{receipt_id}")
         return result
 
     @mcp.tool()
@@ -84,7 +86,8 @@ def build_mcp(context):
         with session_scope(context.sessions) as session:
             attachment = context.service.attach_file(session, receipt_id, path)
             result = {"id": attachment.id, "path": attachment.path, "status": attachment.status}
-        log_action(context.workspace, "attach file", f"receipt {receipt_id}, path {path}", channel="MCP")
+        log_action(context.workspace, "attach file", f"receipt {receipt_id}, path {path}", channel="MCP",
+                  link=f"/receipts/{receipt_id}")
         return result
 
     @mcp.tool()
@@ -94,7 +97,8 @@ def build_mcp(context):
             receipt = context.service.merge(session, source_ids, target_id)
             result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
             target_id_used = receipt.id
-        log_action(context.workspace, "merge receipts", f"sources {len(source_ids)}, target {target_id_used}", channel="MCP")
+        log_action(context.workspace, "merge receipts", f"sources {len(source_ids)}, target {target_id_used}", channel="MCP",
+                  link=f"/receipts/{target_id_used}")
         return result
 
     @mcp.tool()
@@ -103,7 +107,7 @@ def build_mcp(context):
         with session_scope(context.sessions) as session:
             receipt = context.service.patch(session, receipt_id, ReceiptPatch(state="archived"))
             result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
-        log_action(context.workspace, "archive receipt", receipt_id, channel="MCP")
+        log_action(context.workspace, "archive receipt", receipt_id, channel="MCP", link=f"/receipts/{receipt_id}")
         return result
 
     @mcp.tool()
@@ -112,7 +116,7 @@ def build_mcp(context):
         with session_scope(context.sessions) as session:
             receipt = context.service.patch(session, receipt_id, ReceiptPatch(state="draft"))
             result = ReceiptOut.model_validate(receipt).model_dump(mode="json")
-        log_action(context.workspace, "restore receipt", receipt_id, channel="MCP")
+        log_action(context.workspace, "restore receipt", receipt_id, channel="MCP", link=f"/receipts/{receipt_id}")
         return result
 
     @mcp.tool()
@@ -120,7 +124,7 @@ def build_mcp(context):
         """Permanently delete a deleted receipt (after the retention period)."""
         with session_scope(context.sessions) as session:
             context.service.purge(session, receipt_id)
-        log_action(context.workspace, "purge receipt", receipt_id, channel="MCP")
+        log_action(context.workspace, "purge receipt", receipt_id, channel="MCP", link=f"/receipts/{receipt_id}")
         return {"purged": receipt_id}
 
     @mcp.tool()
@@ -146,7 +150,8 @@ def build_mcp(context):
     ) -> dict[str, Any]:
         """Link or import an Apple Photos asset into a receipt."""
         attachment = context.photos.link_asset(receipt_id, asset_id, mode)
-        log_action(context.workspace, "link photo asset", f"receipt {receipt_id}, asset {asset_id}", channel="MCP")
+        log_action(context.workspace, "link photo asset", f"receipt {receipt_id}, asset {asset_id}", channel="MCP",
+                  link=f"/receipts/{receipt_id}")
         return {"id": attachment.id, "kind": attachment.kind, "path": attachment.path}
 
     @mcp.tool()
@@ -155,7 +160,8 @@ def build_mcp(context):
     ) -> dict[str, Any]:
         """Attach an Apple Photos album dynamically or as an asset-ID snapshot."""
         attachment = context.photos.link_album(receipt_id, album_id, mode)
-        log_action(context.workspace, "link photo album", f"receipt {receipt_id}, album {album_id}", channel="MCP")
+        log_action(context.workspace, "link photo album", f"receipt {receipt_id}, album {album_id}", channel="MCP",
+                  link=f"/receipts/{receipt_id}")
         return {"id": attachment.id, "kind": attachment.kind, "mode": mode}
 
     return mcp

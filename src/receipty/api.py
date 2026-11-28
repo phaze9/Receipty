@@ -81,7 +81,8 @@ def router() -> APIRouter:
                 created = ctx.service.get(session, receipt.id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "create receipt", f"{created.id}: {format_fields(created.fields)}", channel="API")
+        log_action(ctx.workspace, "create receipt", f"{created.id}: {format_fields(created.fields)}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{created.id}")
         return created
 
     @api.get("/receipts/{receipt_id}", response_model=ReceiptOut)
@@ -97,21 +98,24 @@ def router() -> APIRouter:
     def update_receipt(request: Request, receipt_id: str, body: ReceiptPatch):
         ctx = context(request)
         result = apply_patch(ctx, receipt_id, body)
-        log_action(ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(result.fields)}", channel="API")
+        log_action(ctx.workspace, "update receipt", f"{receipt_id}: {format_fields(result.fields)}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.post("/receipts/{receipt_id}/archive", response_model=ReceiptOut)
     def archive_receipt(request: Request, receipt_id: str):
         ctx = context(request)
         result = apply_patch(ctx, receipt_id, ReceiptPatch(state="archived"))
-        log_action(ctx.workspace, "archive receipt", receipt_id, channel="API")
+        log_action(ctx.workspace, "archive receipt", receipt_id, channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.post("/receipts/{receipt_id}/restore", response_model=ReceiptOut)
     def restore_receipt(request: Request, receipt_id: str):
         ctx = context(request)
         result = apply_patch(ctx, receipt_id, ReceiptPatch(state="draft"))
-        log_action(ctx.workspace, "restore receipt", receipt_id, channel="API")
+        log_action(ctx.workspace, "restore receipt", receipt_id, channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.post("/receipts/{receipt_id}/purge", status_code=204)
@@ -124,7 +128,8 @@ def router() -> APIRouter:
             raise HTTPException(404, str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "purge receipt", receipt_id, channel="API")
+        log_action(ctx.workspace, "purge receipt", receipt_id, channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
 
     @api.post("/receipts/merge", response_model=ReceiptOut)
     def merge_receipts(request: Request, body: MergeRequest):
@@ -136,7 +141,8 @@ def router() -> APIRouter:
                 result = ctx.service.get(session, merged.id)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "merge receipts", f"sources {len(body.source_ids)}, target {target_id}", channel="API")
+        log_action(ctx.workspace, "merge receipts", f"sources {len(body.source_ids)}, target {target_id}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{target_id}")
         return result
 
     @api.post("/receipts/{receipt_id}/attachments", response_model=AttachmentOut)
@@ -150,7 +156,8 @@ def router() -> APIRouter:
             raise HTTPException(404, str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-        log_action(ctx.workspace, "attach file", f"receipt {receipt_id}, path {body.path}", channel="API")
+        log_action(ctx.workspace, "attach file", f"receipt {receipt_id}, path {body.path}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.get("/attachments/{attachment_id}/content")
@@ -223,7 +230,8 @@ def router() -> APIRouter:
     def link_photo_asset(request: Request, receipt_id: str, body: PhotoAssetLink):
         ctx = context(request)
         result = ctx.photos.link_asset(receipt_id, body.asset_id, body.mode)
-        log_action(ctx.workspace, "link photo asset", f"receipt {receipt_id}, asset {body.asset_id}", channel="API")
+        log_action(ctx.workspace, "link photo asset", f"receipt {receipt_id}, asset {body.asset_id}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.post("/receipts/{receipt_id}/photos/albums", response_model=AttachmentOut)
@@ -233,7 +241,8 @@ def router() -> APIRouter:
             result = ctx.photos.link_album(receipt_id, body.album_id, body.mode)
         except LookupError as exc:
             raise HTTPException(404, str(exc)) from exc
-        log_action(ctx.workspace, "link photo album", f"receipt {receipt_id}, album {body.album_id}", channel="API")
+        log_action(ctx.workspace, "link photo album", f"receipt {receipt_id}, album {body.album_id}", channel="API",
+                  link=f"{str(request.base_url).rstrip('/')}/receipts/{receipt_id}")
         return result
 
     @api.get("/attachments/{attachment_id}/photos/assets")

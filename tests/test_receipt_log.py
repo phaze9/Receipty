@@ -220,3 +220,39 @@ def test_field_values_logged_but_secrets_redacted(tmp_path: Path, monkeypatch):
     assert "hello" in detail
     assert "secret-value" not in detail
     assert "bank_token: [redacted]" in detail
+
+
+def test_ui_log_line_includes_receipt_link(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("RECEIPTY_LOG", "1")
+    monkeypatch.setattr(
+        receipt_log, "generate_message",
+        lambda action, detail, channel="UI": "A receipt was created in the UI",
+    )
+    app = create_app(tmp_path / "workspace", start_background=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/receipts",
+            data={"title": "Cafe", "date": "todo", "description": ""},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        location = response.headers["location"]
+    log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
+    assert f"http://testserver{location}" in log
+
+
+def test_mcp_log_line_includes_receipt_link(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("RECEIPTY_LOG", "1")
+    monkeypatch.setattr(
+        receipt_log, "generate_message",
+        lambda action, detail, channel="MCP": "A receipt was created in MCP",
+    )
+    app = create_app(tmp_path / "workspace", start_background=False)
+    context = app.state.context
+    mcp = build_mcp(context)
+    result = mcp._tool_manager.get_tool("create_receipt").fn(
+        {"title": "Cafe", "date": "todo"}, "draft"
+    )
+    receipt_id = result["id"]
+    log = (tmp_path / "workspace" / "LOG.md").read_text(encoding="utf-8")
+    assert f"/receipts/{receipt_id}" in log
